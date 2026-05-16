@@ -1,6 +1,6 @@
-# PriceWatch
+# PriceTrail
 
-PriceWatch is a Vercel-ready ecommerce price tracker for Amazon India, Flipkart, Myntra and Ajio links.
+PriceTrail is a Vercel-ready ecommerce price tracker for Amazon India, Flipkart, Myntra and Ajio links.
 
 It records price snapshots over time and reports:
 

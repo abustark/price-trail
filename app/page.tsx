@@ -18,8 +18,8 @@ export default async function Home() {
     <main className="shell">
       <header className="topbar">
         <a className="brand" href="/">
-          <span className="mark">PW</span>
-          <span>PriceWatch</span>
+          <span className="mark">PT</span>
+          <span>PriceTrail</span>
         </a>
         <div className="top-actions">
           <div className="stores" aria-label="Supported stores">

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PriceWatch",
+  title: "PriceTrail",
   description: "Track ecommerce price history across Amazon, Flipkart, Myntra and Ajio."
 };
 
@@ -15,7 +15,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var theme = localStorage.getItem("pricewatch-theme");
+                var theme = localStorage.getItem("pricetrail-theme");
                 var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
                 document.documentElement.dataset.theme = theme || (prefersDark ? "dark" : "light");
               } catch (_) {}

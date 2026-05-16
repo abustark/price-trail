@@ -35,8 +35,8 @@ export default async function ProductPage({ params }: Props) {
     <main className="shell">
       <header className="topbar">
         <a className="brand" href="/">
-          <span className="mark">PW</span>
-          <span>PriceWatch</span>
+          <span className="mark">PT</span>
+          <span>PriceTrail</span>
         </a>
         <div className="action-row">
           <RescanButton productId={id} />
