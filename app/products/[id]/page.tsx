@@ -8,6 +8,8 @@ import { RescanButton } from "@/components/RescanButton";
 import { ResetHistoryButton } from "@/components/ResetHistoryButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SiteFooter } from "@/components/SiteFooter";
+import { AuthButton } from "@/components/AuthButton";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +20,12 @@ type Props = {
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
   if (!ObjectId.isValid(id)) notFound();
+  const session = await auth();
+  if (!session?.user?.id) notFound();
 
   const db = await getDb();
   const productId = new ObjectId(id);
-  const product = await db.collection<ProductDocument>("products").findOne({ _id: productId });
+  const product = await db.collection<ProductDocument>("products").findOne({ _id: productId, userId: session.user.id });
   if (!product) notFound();
 
   const samples = await db
@@ -42,6 +46,7 @@ export default async function ProductPage({ params }: Props) {
         <div className="action-row">
           <RescanButton productId={id} />
           <ResetHistoryButton productId={id} />
+          <AuthButton />
           <ThemeToggle />
         </div>
       </header>

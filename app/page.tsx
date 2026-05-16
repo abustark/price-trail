@@ -4,11 +4,14 @@ import { TrackForm } from "@/components/TrackForm";
 import { ProductList } from "@/components/ProductList";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SiteFooter } from "@/components/SiteFooter";
+import { AuthButton } from "@/components/AuthButton";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const products = await loadProducts();
+  const session = await auth();
   const activeCount = products.filter((product) => product.active).length;
   const storeCount = new Set(products.map((product) => product.store)).size;
   const lastScan = products
@@ -23,13 +26,8 @@ export default async function Home() {
           <span>PriceTrail</span>
         </a>
         <div className="top-actions">
-          <div className="stores" aria-label="Supported stores">
-            {["Amazon", "Flipkart", "Myntra", "Ajio"].map((store) => (
-              <span className="store-pill" key={store}>
-                {store}
-              </span>
-            ))}
-          </div>
+          <span className="support-line">Amazon · Flipkart · Myntra · Ajio</span>
+          <AuthButton />
           <ThemeToggle />
         </div>
       </header>
@@ -37,7 +35,11 @@ export default async function Home() {
       <section className="hero compact-hero">
         <p className="eyebrow">Amazon, Flipkart, Myntra and Ajio price history</p>
         <h1>Paste a product link. Know the real price pattern.</h1>
-        <p className="hero-copy">See current price, high, low, most common price and how often it changes.</p>
+        <p className="hero-copy">
+          {session?.user
+            ? "Your tracked links are saved to your Google account and available across devices."
+            : "Sign in with Google to save tracked links across devices."}
+        </p>
         <TrackForm />
       </section>
 
@@ -77,8 +79,16 @@ export default async function Home() {
 
 async function loadProducts(): Promise<ProductDocument[]> {
   try {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
     const db = await getDb();
-    return await db.collection<ProductDocument>("products").find({}).sort({ updatedAt: -1 }).limit(50).toArray();
+    return await db
+      .collection<ProductDocument>("products")
+      .find({ userId: session.user.id })
+      .sort({ updatedAt: -1 })
+      .limit(50)
+      .toArray();
   } catch {
     return [];
   }

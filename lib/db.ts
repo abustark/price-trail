@@ -25,10 +25,17 @@ export async function getDb(): Promise<Db> {
 
 export async function ensureIndexes() {
   const db = await getDb();
+  const products = db.collection("products");
+
+  const indexes = await products.listIndexes().toArray();
+  if (indexes.some((index) => index.name === "normalizedUrl_1")) {
+    await products.dropIndex("normalizedUrl_1");
+  }
 
   await Promise.all([
-    db.collection("products").createIndex({ normalizedUrl: 1 }, { unique: true }),
-    db.collection("products").createIndex({ active: 1, nextScanAt: 1 }),
+    products.createIndex({ userId: 1, normalizedUrl: 1 }, { unique: true }),
+    products.createIndex({ active: 1, nextScanAt: 1 }),
+    products.createIndex({ userId: 1, updatedAt: -1 }),
     db.collection("price_samples").createIndex({ productId: 1, capturedAt: -1 }),
     db.collection("price_samples").createIndex({ productId: 1, price: 1 })
   ]);

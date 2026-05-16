@@ -42,19 +42,20 @@ export async function fetchProductSnapshot(url: string): Promise<ScanResult> {
   throw new Error("Could not find a product price. The store may have blocked the request or changed its page format.");
 }
 
-export async function scanAndSaveProduct(inputUrl: string): Promise<ProductDocument> {
+export async function scanAndSaveProduct(inputUrl: string, userId?: string): Promise<ProductDocument> {
   const resolvedUrl = await resolveSupportedProductUrl(inputUrl);
   const { store, normalizedUrl } = assertAllowedProductUrl(resolvedUrl);
   const snapshot = await fetchProductSnapshot(normalizedUrl);
   const db = await getDb();
   const now = new Date();
 
-  const existing = await db.collection<ProductDocument>("products").findOne({ normalizedUrl });
+  const existing = await db.collection<ProductDocument>("products").findOne({ normalizedUrl, userId });
   const productId = existing?._id || new ObjectId();
 
   const productUpdate: Omit<ProductDocument, "_id" | "createdAt"> = {
     url: resolvedUrl,
     normalizedUrl,
+    userId,
     store,
     title: snapshot.title,
     imageUrl: snapshot.imageUrl,
@@ -109,7 +110,7 @@ export async function scanDueProducts(limit = 20) {
   const results = [];
   for (const product of products) {
     try {
-      const updated = await scanAndSaveProduct(product.normalizedUrl);
+      const updated = await scanAndSaveProduct(product.normalizedUrl, product.userId);
       results.push({ id: updated._id?.toString(), ok: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown scan error";

@@ -6,6 +6,7 @@ export type ProductDocument = {
   _id?: ObjectId;
   url: string;
   normalizedUrl: string;
+  userId?: string;
   store: StoreKey;
   title: string;
   imageUrl?: string;

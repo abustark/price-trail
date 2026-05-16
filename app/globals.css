@@ -132,7 +132,6 @@ input {
 }
 
 .top-actions,
-.stores,
 .action-row {
   display: flex;
   align-items: center;
@@ -140,14 +139,10 @@ input {
   flex-wrap: wrap;
 }
 
-.store-pill {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 8px 12px;
-  background: var(--panel);
+.support-line {
   color: var(--muted);
   font-size: 13px;
-  backdrop-filter: blur(16px);
+  font-weight: 700;
 }
 
 .theme-switch {
@@ -162,6 +157,69 @@ input {
   color: var(--text);
   cursor: pointer;
   backdrop-filter: blur(16px);
+}
+
+.auth-pill,
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+}
+
+.auth-pill.disabled {
+  cursor: default;
+  color: var(--muted);
+}
+
+.auth-dot,
+.google-mark,
+.avatar-fallback,
+.user-chip img {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.auth-dot {
+  background: var(--warm);
+}
+
+.google-mark {
+  background: var(--panel-solid);
+  color: #6d28d9;
+  font-weight: 900;
+}
+
+.avatar-fallback {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.user-chip img {
+  object-fit: cover;
+}
+
+.plain-action {
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0;
 }
 
 .switch-label {
@@ -688,17 +746,14 @@ input {
     width: 100%;
   }
 
-  .stores {
-    flex: 1;
-    gap: 7px;
-  }
-
-  .store-pill {
-    padding: 7px 10px;
+  .support-line {
+    width: 100%;
     font-size: 12px;
   }
 
-  .theme-switch {
+  .theme-switch,
+  .auth-pill,
+  .user-chip {
     justify-content: center;
     width: 100%;
   }
@@ -781,17 +836,8 @@ input {
 
 @media (max-width: 520px) {
   .top-actions {
-    flex-direction: column;
-  }
-
-  .stores {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: 100%;
-  }
-
-  .store-pill {
-    text-align: center;
+    grid-template-columns: 1fr;
   }
 
   .switch-label {

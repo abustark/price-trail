@@ -15,7 +15,7 @@ export function ProductList({ products }: { products: ProductListItem[] }) {
   if (products.length === 0) {
     return (
       <div className="empty-state">
-        <p>No tracked products yet. Paste a product link above to start the first price history.</p>
+        <p>Sign in, then paste a product link above to start your saved price history.</p>
       </div>
     );
   }

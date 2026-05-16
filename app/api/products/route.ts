@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { auth } from "@/auth";
 import { ensureIndexes, getDb } from "@/lib/db";
 import { scanAndSaveProduct } from "@/lib/scanner";
 import type { ProductDocument } from "@/lib/types";
@@ -9,11 +10,16 @@ const TrackSchema = z.object({
 });
 
 export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ products: [] });
+  }
+
   await ensureIndexes();
   const db = await getDb();
   const products = await db
     .collection<ProductDocument>("products")
-    .find({})
+    .find({ userId: session.user.id })
     .sort({ updatedAt: -1 })
     .limit(50)
     .toArray();
@@ -28,9 +34,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Sign in with Google to save tracked products across devices." }, { status: 401 });
+    }
+
     await ensureIndexes();
     const body = TrackSchema.parse(await request.json());
-    const product = await scanAndSaveProduct(body.url);
+    const product = await scanAndSaveProduct(body.url, session.user.id);
 
     return NextResponse.json({
       product: {

@@ -31,9 +31,31 @@ Set these environment variables:
 MONGODB_URI=mongodb+srv://USER:PASSWORD@cluster.mongodb.net/price_tracker?retryWrites=true&w=majority
 MONGODB_DB=price_tracker
 CRON_SECRET=replace-with-a-long-random-secret
+AUTH_SECRET=replace-with-a-long-random-auth-secret
+AUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=your-google-oauth-client-id
+GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
 ```
 
 Open `http://localhost:3000`, paste a product URL, and the app will scan and save the first price sample.
+
+## Google Sign In
+
+PriceTrail uses Auth.js/NextAuth Google OAuth so tracked product links are saved to the signed-in user and available across devices.
+
+Create OAuth credentials in Google Cloud Console and add this redirect URI:
+
+```text
+http://localhost:3000/api/auth/callback/google
+```
+
+For Vercel production, also add:
+
+```text
+https://your-vercel-domain.vercel.app/api/auth/callback/google
+```
+
+Set the same `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`, and production `AUTH_URL` in Vercel environment variables.
 
 ## Deployment
 

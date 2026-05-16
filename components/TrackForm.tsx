@@ -26,7 +26,7 @@ export function TrackForm() {
 
       if (!response.ok) {
         setStatus("error");
-        setMessage(payload.error || "Could not scan this product.");
+        setMessage(response.status === 401 ? "Sign in with Google before tracking products." : payload.error || "Could not scan this product.");
         return;
       }
 
