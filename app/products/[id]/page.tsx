@@ -7,6 +7,7 @@ import { PriceChart } from "@/components/PriceChart";
 import { RescanButton } from "@/components/RescanButton";
 import { ResetHistoryButton } from "@/components/ResetHistoryButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +100,7 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </div>
       </section>
+      <SiteFooter />
     </main>
   );
 }

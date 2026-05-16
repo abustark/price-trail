@@ -3,6 +3,7 @@ import type { ProductDocument } from "@/lib/types";
 import { TrackForm } from "@/components/TrackForm";
 import { ProductList } from "@/components/ProductList";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,7 @@ export default async function Home() {
         </div>
         <ProductList products={products.map((product) => serializeProduct(product))} />
       </section>
+      <SiteFooter />
     </main>
   );
 }
