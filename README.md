@@ -47,11 +47,11 @@ The included `vercel.json` registers a cron job:
 ```json
 {
   "path": "/api/cron/scan",
-  "schedule": "0 */6 * * *"
+  "schedule": "0 0 * * *"
 }
 ```
 
-Vercel Cron sends an HTTP `GET` request to the configured path in production. The schedule runs in UTC.
+Vercel Cron sends an HTTP `GET` request to the configured path in production. The schedule runs in UTC. Vercel Hobby projects are limited to daily cron jobs; on Pro you can change the schedule back to every 6 hours with `0 */6 * * *`.
 
 ## Scraping Notes
 
