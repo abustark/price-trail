@@ -2,7 +2,7 @@ import type { StoreKey } from "@/lib/types";
 
 const STORE_HOSTS: Record<StoreKey, string[]> = {
   amazon: ["amazon.in", "www.amazon.in", "smile.amazon.in"],
-  flipkart: ["flipkart.com", "www.flipkart.com", "dl.flipkart.com", "dl.dl.flipkart.com"],
+  flipkart: ["flipkart.com", "www.flipkart.com"],
   myntra: ["myntra.com", "www.myntra.com"],
   ajio: ["ajio.com", "www.ajio.com"]
 };
@@ -56,8 +56,9 @@ export async function resolveSupportedProductUrl(input: string): Promise<string>
     throw new Error("Only http and https product links are supported.");
   }
 
-  if (detectStore(input)) {
-    return input;
+  const directStore = detectStore(input);
+  if (directStore) {
+    return canonicalizeStoreUrl(input, directStore);
   }
 
   const shortLinkStore = detectShortLinkStore(input);
@@ -71,7 +72,7 @@ export async function resolveSupportedProductUrl(input: string): Promise<string>
     throw new Error("The short link did not resolve to a supported ecommerce product page.");
   }
 
-  return resolvedUrl;
+  return canonicalizeStoreUrl(resolvedUrl, resolvedStore);
 }
 
 export function normalizeProductUrl(input: string): string {
@@ -84,7 +85,8 @@ export function normalizeProductUrl(input: string): string {
     }
   });
 
-  return url.toString();
+  const store = detectStore(url.toString());
+  return store ? canonicalizeStoreUrl(url.toString(), store) : url.toString();
 }
 
 export function assertAllowedProductUrl(input: string): { store: StoreKey; normalizedUrl: string } {
@@ -105,20 +107,27 @@ function normalizeHostname(hostname: string): string {
   return hostname.toLowerCase().replace(/^m\./, "www.");
 }
 
+export function canonicalizeStoreUrl(input: string, store: StoreKey): string {
+  const url = new URL(input);
+  url.protocol = "https:";
+
+  if (store === "flipkart") {
+    url.hostname = "www.flipkart.com";
+  }
+
+  if (store === "amazon" && url.hostname.toLowerCase() === "amazon.in") {
+    url.hostname = "www.amazon.in";
+  }
+
+  url.hash = "";
+  return url.toString();
+}
+
 async function followKnownShortLink(input: string): Promise<string> {
   let current = input;
 
   for (let index = 0; index < 5; index += 1) {
-    const response = await fetch(current, {
-      method: "HEAD",
-      redirect: "manual",
-      headers: {
-        "accept-language": "en-IN,en;q=0.9",
-        "user-agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-      },
-      cache: "no-store"
-    });
+    const response = await fetchRedirect(current, "HEAD");
 
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
@@ -137,16 +146,38 @@ async function followKnownShortLink(input: string): Promise<string> {
 
   if (detectStore(current)) return current;
 
-  const response = await fetch(input, {
-    method: "GET",
-    redirect: "follow",
-    headers: {
-      "accept-language": "en-IN,en;q=0.9",
-      "user-agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-    },
-    cache: "no-store"
-  });
+  const response = await fetchRedirect(input, "GET");
 
   return response.url || current;
+}
+
+async function fetchRedirect(input: string, method: "GET" | "HEAD") {
+  try {
+    return await fetch(input, {
+      method,
+      redirect: method === "GET" ? "follow" : "manual",
+      headers: {
+        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-IN,en-US;q=0.9,en;q=0.8",
+        "cache-control": "no-cache",
+        pragma: "no-cache",
+        "sec-ch-ua": "\"Chromium\";v=\"125\", \"Google Chrome\";v=\"125\", \"Not.A/Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Windows\"",
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "none",
+        "upgrade-insecure-requests": "1",
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+      },
+      cache: "no-store"
+    });
+  } catch {
+    if (method === "HEAD") {
+      return fetchRedirect(input, "GET");
+    }
+    throw new Error("Could not resolve this short link. Paste the final www.flipkart.com product URL if the short link fails.");
+  }
 }

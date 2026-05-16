@@ -1,10 +1,12 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
-import { assertAllowedProductUrl, resolveSupportedProductUrl } from "@/lib/stores";
+import { assertAllowedProductUrl, canonicalizeStoreUrl, detectStore, resolveSupportedProductUrl } from "@/lib/stores";
 import type { PriceSampleDocument, ProductDocument, ScanResult, StoreKey } from "@/lib/types";
 
 const USER_AGENT =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
+const FETCH_TIMEOUT_MS = 18000;
+const MAX_ATTEMPTS = 3;
 
 type ParsedProduct = {
   title: string;
@@ -24,37 +26,44 @@ type ProxyConfig = {
 
 export async function fetchProductSnapshot(url: string): Promise<ScanResult> {
   const { store } = assertAllowedProductUrl(url);
-  const direct = await fetchHtml(url, "direct");
-  const parsed = parseProductHtml(direct.html, store);
+  const canonicalUrl = canonicalizeStoreUrl(url, store);
+  let directError: unknown;
 
-  if (parsed.price) {
-    return { ...parsed, price: parsed.price, source: direct.source };
+  try {
+    const direct = await fetchHtml(canonicalUrl, store, "direct");
+    const parsed = parseProductHtml(direct.html, store);
+    if (parsed.price) {
+      return { ...parsed, price: parsed.price, source: direct.source };
+    }
+  } catch (error) {
+    directError = error;
   }
 
   if (process.env.SCRAPER_PROXY_ENDPOINT) {
-    const proxy = await fetchHtml(url, "proxy");
+    const proxy = await fetchHtml(canonicalUrl, store, "proxy");
     const proxyParsed = parseProductHtml(proxy.html, store);
     if (proxyParsed.price) {
       return { ...proxyParsed, price: proxyParsed.price, source: proxy.source };
     }
   }
 
-  throw new Error("Could not find a product price. The store may have blocked the request or changed its page format.");
+  throw buildUserFacingScanError(store, directError);
 }
 
 export async function scanAndSaveProduct(inputUrl: string, userId?: string): Promise<ProductDocument> {
   const resolvedUrl = await resolveSupportedProductUrl(inputUrl);
   const { store, normalizedUrl } = assertAllowedProductUrl(resolvedUrl);
-  const snapshot = await fetchProductSnapshot(normalizedUrl);
+  const canonicalUrl = canonicalizeStoreUrl(normalizedUrl, store);
+  const snapshot = await fetchProductSnapshot(canonicalUrl);
   const db = await getDb();
   const now = new Date();
 
-  const existing = await db.collection<ProductDocument>("products").findOne({ normalizedUrl, userId });
+  const existing = await db.collection<ProductDocument>("products").findOne({ normalizedUrl: canonicalUrl, userId });
   const productId = existing?._id || new ObjectId();
 
   const productUpdate: Omit<ProductDocument, "_id" | "createdAt"> = {
-    url: resolvedUrl,
-    normalizedUrl,
+    url: canonicalUrl,
+    normalizedUrl: canonicalUrl,
     userId,
     store,
     title: snapshot.title,
@@ -131,24 +140,49 @@ export async function scanDueProducts(limit = 20) {
   return results;
 }
 
-async function fetchHtml(url: string, mode: "direct" | "proxy"): Promise<{ html: string; source: "direct" | "proxy" }> {
+async function fetchHtml(
+  url: string,
+  store: StoreKey,
+  mode: "direct" | "proxy"
+): Promise<{ html: string; source: "direct" | "proxy" }> {
   const proxyConfig = getProxyConfig();
-  const target = mode === "proxy" ? buildProxyUrl(url, proxyConfig) : url;
+  let target = mode === "proxy" ? buildProxyUrl(url, proxyConfig) : url;
+  let lastError: unknown;
 
-  const response = await fetch(target, {
-    headers: {
-      "accept-language": "en-IN,en;q=0.9",
-      "user-agent": USER_AGENT,
-      ...buildProxyHeaders(proxyConfig)
-    },
-    cache: "no-store"
-  });
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(target, {
+        redirect: mode === "direct" ? "manual" : "follow",
+        headers: {
+          ...buildBrowserHeaders(store, target),
+          ...buildProxyHeaders(proxyConfig)
+        },
+        cache: "no-store"
+      });
 
-  if (!response.ok) {
-    throw new Error(`Fetch failed with HTTP ${response.status}`);
+      if (mode === "direct" && isRedirect(response.status)) {
+        target = followSafeRedirect(target, response, store);
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Store request failed with HTTP ${response.status}`);
+      }
+
+      const html = await response.text();
+      if (looksBlocked(html)) {
+        throw new Error("The store returned a bot-check or blocked response instead of the product page.");
+      }
+
+      return { html, source: mode };
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableFetchError(error) || attempt === MAX_ATTEMPTS) break;
+      await sleep(350 * attempt);
+    }
   }
 
-  return { html: await response.text(), source: mode };
+  throw lastError instanceof Error ? lastError : new Error("Product page fetch failed.");
 }
 
 function getProxyConfig(): ProxyConfig {
@@ -176,6 +210,95 @@ function buildProxyUrl(url: string, config: ProxyConfig): string {
 function buildProxyHeaders(config: ProxyConfig): Record<string, string> {
   if (!config.token || !config.authHeader) return {};
   return { [config.authHeader]: config.token };
+}
+
+async function fetchWithTimeout(input: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function buildBrowserHeaders(store: StoreKey, url: string): Record<string, string> {
+  const origin = new URL(url).origin;
+  return {
+    accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "accept-encoding": "gzip, deflate, br",
+    "accept-language": "en-IN,en-US;q=0.9,en;q=0.8",
+    "cache-control": "no-cache",
+    pragma: "no-cache",
+    priority: "u=0, i",
+    referer: store === "flipkart" ? "https://www.flipkart.com/" : origin,
+    "sec-ch-ua": "\"Chromium\";v=\"125\", \"Google Chrome\";v=\"125\", \"Not.A/Brand\";v=\"24\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Windows\"",
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": "same-origin",
+    "sec-fetch-user": "?1",
+    "upgrade-insecure-requests": "1",
+    "user-agent": USER_AGENT
+  };
+}
+
+function isRedirect(status: number): boolean {
+  return status >= 300 && status < 400;
+}
+
+function followSafeRedirect(currentUrl: string, response: Response, store: StoreKey): string {
+  const location = response.headers.get("location");
+  if (!location) {
+    throw new Error("The store redirected without a destination URL.");
+  }
+
+  const nextUrl = new URL(location, currentUrl).toString();
+  const nextStore = detectStore(nextUrl);
+  if (nextStore !== store) {
+    throw new Error("The product URL redirected away from the supported store.");
+  }
+
+  return canonicalizeStoreUrl(nextUrl, store);
+}
+
+function looksBlocked(html: string): boolean {
+  return /captcha|robot check|access denied|request blocked|unusual traffic|are you a human/i.test(html);
+}
+
+function isRetryableFetchError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /fetch failed|network|timeout|aborted|econnreset|etimedout|tls|ssl|handshake|internal error|HTTP 429|HTTP 500|HTTP 502|HTTP 503|HTTP 504/i.test(
+    message
+  );
+}
+
+function buildUserFacingScanError(store: StoreKey, error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error || "");
+  const isTls = /tls|ssl|handshake|ssl3_read_bytes|alert internal error|fetch failed/i.test(message);
+
+  if (store === "flipkart" && isTls) {
+    return new Error(
+      "Flipkart blocked the direct secure connection from production hosting. The URL was normalized to www.flipkart.com and retried, but reliable Flipkart scans may need SCRAPER_PROXY_ENDPOINT."
+    );
+  }
+
+  if (store === "flipkart") {
+    return new Error(
+      "Could not read the Flipkart product price. Paste the final www.flipkart.com product URL, or configure SCRAPER_PROXY_ENDPOINT if Flipkart blocks Vercel requests."
+    );
+  }
+
+  return new Error("Could not read this product price. The store may have blocked the request or changed its page format.");
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function parseProductHtml(html: string, store: StoreKey): ParsedProduct {
@@ -242,7 +365,7 @@ function parseStoreSpecificPrice(html: string, store: StoreKey): number | undefi
 
   if (store === "flipkart") {
     candidates.push(
-      parseFirst(decoded, /class=["'][^"']*(?:_30jeq3|Nx9bqj|CxhGGd)[^"']*["'][^>]*>\s*₹\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
+      parseFirst(decoded, /class=["'][^"']*(?:_30jeq3|Nx9bqj|CxhGGd)[^"']*["'][^>]*>\s*(?:\u20b9|Rs\.?)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
       parseFirst(decoded, /"finalPrice"\s*:\s*\{[^{}]*"value"\s*:\s*([0-9,.]+)/i),
       parseFirst(decoded, /"sellingPrice"\s*:\s*\{[^{}]*"value"\s*:\s*([0-9,.]+)/i),
       parseFirst(decoded, /"discountedPrice"\s*:\s*([0-9,.]+)/i)
@@ -252,14 +375,14 @@ function parseStoreSpecificPrice(html: string, store: StoreKey): number | undefi
   if (store === "amazon") {
     candidates.push(
       parseFirst(decoded, /class=["'][^"']*a-price-whole[^"']*["'][^>]*>\s*([0-9,]+)\s*</i),
-      parseFirst(decoded, /id=["']priceblock_(?:ourprice|dealprice|saleprice)["'][^>]*>\s*₹\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
+      parseFirst(decoded, /id=["']priceblock_(?:ourprice|dealprice|saleprice)["'][^>]*>\s*(?:\u20b9|Rs\.?)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
       parseFirst(decoded, /"priceToPay"\s*:\s*\{[^{}]*"amount"\s*:\s*([0-9,.]+)/i)
     );
   }
 
   if (store === "myntra") {
     candidates.push(
-      parseFirst(decoded, /class=["'][^"']*pdp-price[^"']*["'][^>]*>\s*₹\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
+      parseFirst(decoded, /class=["'][^"']*pdp-price[^"']*["'][^>]*>\s*(?:\u20b9|Rs\.?)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
       parseFirst(decoded, /"discountedPrice"\s*:\s*([0-9,.]+)/i),
       parseFirst(decoded, /"price"\s*:\s*([0-9,.]+)\s*,\s*"discountedPrice"/i)
     );
@@ -267,9 +390,9 @@ function parseStoreSpecificPrice(html: string, store: StoreKey): number | undefi
 
   if (store === "ajio") {
     candidates.push(
-      parseFirst(decoded, /class=["'][^"']*(?:prod-sp|price)[^"']*["'][^>]*>\s*₹\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
+      parseFirst(decoded, /class=["'][^"']*(?:prod-sp|price)[^"']*["'][^>]*>\s*(?:\u20b9|Rs\.?)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
       parseFirst(decoded, /"wasPriceData"\s*:\s*\{[^{}]*"value"\s*:\s*([0-9,.]+)/i),
-      parseFirst(decoded, /"price"\s*:\s*\{[^{}]*"formattedValue"[^{}]*₹\s*([0-9,]+(?:\.[0-9]{1,2})?)/i)
+      parseFirst(decoded, /"price"\s*:\s*\{[^{}]*"formattedValue"[^{}]*(?:\u20b9|Rs\.?)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i)
     );
   }
 
