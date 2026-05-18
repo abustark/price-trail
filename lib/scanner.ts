@@ -40,10 +40,13 @@ export async function fetchProductSnapshot(url: string): Promise<ScanResult> {
   }
 
   if (process.env.SCRAPER_PROXY_ENDPOINT) {
-    const proxy = await fetchHtml(canonicalUrl, store, "proxy");
-    const proxyParsed = parseProductHtml(proxy.html, store);
-    if (proxyParsed.price) {
-      return { ...proxyParsed, price: proxyParsed.price, source: proxy.source };
+    try {
+      const proxy = await fetchHtml(canonicalUrl, store, "proxy");
+      const proxyParsed = parseProductHtml(proxy.html, store);
+      if (proxyParsed.price) {
+        return { ...proxyParsed, price: proxyParsed.price, source: proxy.source };
+      }
+    } catch {
     }
   }
 
@@ -284,14 +287,36 @@ function buildUserFacingScanError(store: StoreKey, error: unknown): Error {
 
   if (store === "flipkart" && isTls) {
     return new Error(
-      "Flipkart blocked the direct secure connection from production hosting. The URL was normalized to www.flipkart.com and retried, but reliable Flipkart scans may need SCRAPER_PROXY_ENDPOINT."
+      "Flipkart blocked the direct secure connection. Configure SCRAPER_PROXY_ENDPOINT in .env.local for reliable scans."
     );
   }
 
   if (store === "flipkart") {
     return new Error(
-      "Could not read the Flipkart product price. Paste the final www.flipkart.com product URL, or configure SCRAPER_PROXY_ENDPOINT if Flipkart blocks Vercel requests."
+      "Could not read the Flipkart product price. Paste the final www.flipkart.com product URL, or configure SCRAPER_PROXY_ENDPOINT if Flipkart blocks requests."
     );
+  }
+
+  if (store === "amazon" && isTls) {
+    return new Error(
+      "Amazon blocked the direct connection. Configure SCRAPER_PROXY_ENDPOINT for reliable scans."
+    );
+  }
+
+  if (store === "myntra" && isTls) {
+    return new Error(
+      "Myntra blocked the direct connection. Configure SCRAPER_PROXY_ENDPOINT for reliable scans."
+    );
+  }
+
+  if (store === "ajio" && isTls) {
+    return new Error(
+      "Ajio blocked the direct connection. Configure SCRAPER_PROXY_ENDPOINT for reliable scans."
+    );
+  }
+
+  if (/blocked|denied|robot|captcha|403|429/i.test(message)) {
+    return new Error("The store blocked this request. Configure SCRAPER_PROXY_ENDPOINT to bypass.");
   }
 
   return new Error("Could not read this product price. The store may have blocked the request or changed its page format.");
