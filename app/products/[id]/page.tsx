@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ObjectId } from "mongodb";
 import { notFound } from "next/navigation";
 import { calculatePriceStats } from "@/lib/analytics";
@@ -8,6 +9,8 @@ import { RescanButton } from "@/components/RescanButton";
 import { ResetHistoryButton } from "@/components/ResetHistoryButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SiteFooter } from "@/components/SiteFooter";
+import { Icon, LogoMark } from "@/components/Icons";
+import { getStoreLabel } from "@/lib/stores";
 import { AuthButton } from "@/components/AuthButton";
 import { auth } from "@/auth";
 
@@ -35,51 +38,56 @@ export default async function ProductPage({ params }: Props) {
     .limit(1000)
     .toArray();
   const stats = calculatePriceStats(samples);
+  const currentPriceDrop = stats.current && stats.highest ? stats.highest.price - stats.current.price : 0;
+  const isAtLowest = samples.length > 1 && stats.current?.price === stats.lowest?.price;
 
   return (
     <main className="shell">
       <header className="topbar">
-        <a className="brand" href="/">
-          <span className="mark">PT</span>
+        <Link className="brand" href="/" aria-label="PriceTrail home">
+          <LogoMark />
           <span>PriceTrail</span>
-        </a>
+        </Link>
         <div className="action-row">
           <RescanButton productId={id} />
           <ResetHistoryButton productId={id} />
-          <AuthButton />
+          <AuthButton session={session} />
           <ThemeToggle />
         </div>
       </header>
 
+      <Link className="back-link" href="/" aria-label="Back to watchlist"><Icon name="arrow" size={16} /> Back to watchlist</Link>
       <section className="panel product-hero">
         <div className="product-hero-card">
           {product.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img className="product-image" src={product.imageUrl} alt="" />
           ) : (
-            <span className="product-image" />
+            <span className="product-image product-image-fallback"><Icon name="spark" size={20} /></span>
           )}
           <div>
-            <p className="eyebrow">Tracked product</p>
+            <div className="detail-kicker"><span className="status-dot" /> Tracking is active</div>
             <h1 className="product-hero-title">{product.title}</h1>
             <div className="product-meta">
-              <span className="meta-chip">{product.store}</span>
+              <span className="meta-chip">{getStoreLabel(product.store, product.normalizedUrl, product.storeLabel)}</span>
               <a className="meta-chip" href={product.normalizedUrl} target="_blank" rel="noreferrer">
-                Open store page
+                Open store page <Icon name="external" size={12} />
               </a>
               <span className="meta-chip">Every {product.scanEveryHours} hours</span>
             </div>
+            {isAtLowest ? <div className="price-insight"><Icon name="trend" size={13} /> Lowest observed price</div> : currentPriceDrop > 0 ? <div className="price-insight"><Icon name="trend" size={13} /> {formatMoney(currentPriceDrop, product.currency)} below tracked high</div> : null}
           </div>
-          <div className="price">{product.lastPrice ? formatMoney(product.lastPrice, product.currency) : "No price"}</div>
+          <div className="price-block"><span>Current price</span><strong>{product.lastPrice != null ? formatMoney(product.lastPrice, product.currency) : "—"}</strong></div>
         </div>
         {product.lastError ? <p className="error">Last scan error: {product.lastError}</p> : null}
       </section>
 
-      <section className="grid" aria-label="Price statistics">
-        <Stat label="Highest price" value={stats.highest ? formatMoney(stats.highest.price, product.currency) : "None"} note={stats.highest ? formatDate(stats.highest.capturedAt) : undefined} />
+      <section className="grid stats-grid" aria-label="Price statistics">
+        <Stat label="Current price" value={stats.current ? formatMoney(stats.current.price, product.currency) : "None"} note={stats.current ? `as of ${formatDate(stats.current.capturedAt)}` : undefined} />
         <Stat label="Lowest price" value={stats.lowest ? formatMoney(stats.lowest.price, product.currency) : "None"} note={stats.lowest ? formatDate(stats.lowest.capturedAt) : undefined} />
-        <Stat label="Most common price" value={stats.common ? formatMoney(stats.common.price, product.currency) : "None"} note={stats.common ? `${stats.common.percentage}% of scans` : undefined} />
-        <Stat label="Change frequency" value={String(stats.changes.count)} note={stats.changes.description} />
+        <Stat label="Highest price" value={stats.highest ? formatMoney(stats.highest.price, product.currency) : "None"} note={stats.highest ? formatDate(stats.highest.capturedAt) : undefined} />
+        <Stat label="Typical price" value={stats.common ? formatMoney(stats.common.price, product.currency) : "None"} note={stats.common ? `${stats.common.percentage}% of snapshots` : undefined} />
+        <Stat label="Price changes" value={String(stats.changes.count)} note={stats.changes.description} />
       </section>
 
       <section className="detail-grid">
@@ -94,14 +102,15 @@ export default async function ProductPage({ params }: Props) {
           />
         </div>
         <div className="panel">
-          <h2>Recent scans</h2>
+          <div className="panel-heading-row"><div><p className="eyebrow">Latest observations</p><h2>Recent scans</h2></div><span className="list-count">{samples.length} total</span></div>
           <div className="samples">
             {[...samples].reverse().slice(0, 12).map((sample) => (
               <div className="sample-row" key={sample._id?.toString()}>
-                <span>{formatDate(sample.capturedAt.toISOString())}</span>
+                <div><span>{formatDate(sample.capturedAt.toISOString())}</span><small>{sample.source === "proxy" ? "Proxy scan" : "Direct scan"}{sample.inStock === false ? " · Out of stock" : ""}</small></div>
                 <strong>{formatMoney(sample.price, sample.currency)}</strong>
               </div>
             ))}
+            {samples.length === 0 ? <p className="muted">Your first price snapshot will appear here.</p> : null}
           </div>
         </div>
       </section>

@@ -1,6 +1,7 @@
 import type { ObjectId } from "mongodb";
 
-export type StoreKey = "amazon" | "flipkart" | "myntra" | "ajio";
+/** Known adapters plus a structured-data fallback for any public ecommerce domain. */
+export type StoreKey = "amazon" | "flipkart" | "myntra" | "ajio" | "other";
 
 export type ProductDocument = {
   _id?: ObjectId;
@@ -8,6 +9,7 @@ export type ProductDocument = {
   normalizedUrl: string;
   userId?: string;
   store: StoreKey;
+  storeLabel?: string;
   title: string;
   imageUrl?: string;
   currency: string;

@@ -1,13 +1,13 @@
 import type { StoreKey } from "@/lib/types";
 
-const STORE_HOSTS: Record<StoreKey, string[]> = {
+const STORE_HOSTS: Record<Exclude<StoreKey, "other">, string[]> = {
   amazon: ["amazon.in", "www.amazon.in", "smile.amazon.in"],
   flipkart: ["flipkart.com", "www.flipkart.com"],
   myntra: ["myntra.com", "www.myntra.com"],
   ajio: ["ajio.com", "www.ajio.com"]
 };
 
-const SHORT_LINK_HOSTS: Partial<Record<StoreKey, string[]>> = {
+const SHORT_LINK_HOSTS: Partial<Record<Exclude<StoreKey, "other">, string[]>> = {
   amazon: ["amzn.in", "amzn.to", "a.co"],
   flipkart: ["fkrt.it", "dl.flipkart.com", "dl.dl.flipkart.com"],
   ajio: ["ajiio.in"]
@@ -28,23 +28,27 @@ const KEEP_PARAMS = new Set([
   "variant"
 ].map((key) => key.toLowerCase()));
 
+/** Return a known adapter, or the generic ecommerce adapter for any public domain. */
 export function detectStore(input: string): StoreKey | null {
   try {
     const url = new URL(input);
+    if (!isSafePublicHostname(url.hostname)) return null;
     const hostname = normalizeHostname(url.hostname);
     const match = Object.entries(STORE_HOSTS).find(([, hosts]) => hosts.includes(hostname));
-    return match?.[0] as StoreKey | null;
+    if (match) return match[0] as StoreKey;
+    const isShortLink = Object.values(SHORT_LINK_HOSTS).some((hosts) => hosts?.includes(hostname));
+    return isShortLink ? null : "other";
   } catch {
     return null;
   }
 }
 
-export function detectShortLinkStore(input: string): StoreKey | null {
+export function detectShortLinkStore(input: string): Exclude<StoreKey, "other"> | null {
   try {
     const url = new URL(input);
     const hostname = normalizeHostname(url.hostname);
     const match = Object.entries(SHORT_LINK_HOSTS).find(([, hosts]) => hosts?.includes(hostname));
-    return match?.[0] as StoreKey | null;
+    return match?.[0] as Exclude<StoreKey, "other"> | null;
   } catch {
     return null;
   }
@@ -63,12 +67,12 @@ export async function resolveSupportedProductUrl(input: string): Promise<string>
 
   const shortLinkStore = detectShortLinkStore(input);
   if (!shortLinkStore) {
-    throw new Error("Only Amazon India, Flipkart, Myntra and Ajio links are supported.");
+    throw new Error("Paste a public product link from any ecommerce store.");
   }
 
   const resolvedUrl = await followKnownShortLink(input);
   const resolvedStore = detectStore(resolvedUrl);
-  if (!resolvedStore || resolvedStore !== shortLinkStore) {
+  if (!resolvedStore || (resolvedStore !== shortLinkStore && resolvedStore !== "other")) {
     throw new Error("The short link did not resolve to a supported ecommerce product page.");
   }
 
@@ -97,10 +101,24 @@ export function assertAllowedProductUrl(input: string): { store: StoreKey; norma
 
   const store = detectStore(input);
   if (!store) {
-    throw new Error("Only Amazon India, Flipkart, Myntra and Ajio links are supported.");
+    throw new Error("Paste a public product link from any ecommerce store.");
   }
 
   return { store, normalizedUrl: normalizeProductUrl(input) };
+}
+
+export function getStoreLabel(store: StoreKey, url?: string, storedLabel?: string): string {
+  if (storedLabel) return storedLabel;
+  if (store === "amazon") return "Amazon";
+  if (store === "flipkart") return "Flipkart";
+  if (store === "myntra") return "Myntra";
+  if (store === "ajio") return "AJIO";
+
+  try {
+    return new URL(url || "").hostname.replace(/^www\./i, "");
+  } catch {
+    return "Online store";
+  }
 }
 
 function normalizeHostname(hostname: string): string {
@@ -121,6 +139,17 @@ export function canonicalizeStoreUrl(input: string, store: StoreKey): string {
 
   url.hash = "";
   return url.toString();
+}
+
+function isSafePublicHostname(hostname: string): boolean {
+  const value = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (!value || value === "localhost" || value.endsWith(".local") || value.endsWith(".internal")) return false;
+  if (/^(127\.|10\.|192\.168\.|169\.254\.)/.test(value)) return false;
+
+  const private172 = value.match(/^172\.(\d+)\./);
+  if (private172 && Number(private172[1]) >= 16 && Number(private172[1]) <= 31) return false;
+  if (value === "0.0.0.0" || value === "::1") return false;
+  return true;
 }
 
 async function followKnownShortLink(input: string): Promise<string> {
@@ -147,7 +176,6 @@ async function followKnownShortLink(input: string): Promise<string> {
   if (detectStore(current)) return current;
 
   const response = await fetchRedirect(input, "GET");
-
   return response.url || current;
 }
 
@@ -158,17 +186,9 @@ async function fetchRedirect(input: string, method: "GET" | "HEAD") {
       redirect: method === "GET" ? "follow" : "manual",
       headers: {
         accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-IN,en-US;q=0.9,en;q=0.8",
         "cache-control": "no-cache",
         pragma: "no-cache",
-        "sec-ch-ua": "\"Chromium\";v=\"125\", \"Google Chrome\";v=\"125\", \"Not.A/Brand\";v=\"24\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\"",
-        "sec-fetch-dest": "document",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-site": "none",
-        "upgrade-insecure-requests": "1",
         "user-agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
       },
@@ -178,6 +198,6 @@ async function fetchRedirect(input: string, method: "GET" | "HEAD") {
     if (method === "HEAD") {
       return fetchRedirect(input, "GET");
     }
-    throw new Error("Could not resolve this short link. Paste the final www.flipkart.com product URL if the short link fails.");
+    throw new Error("Could not resolve this short link. Paste the final product URL if the short link fails.");
   }
 }

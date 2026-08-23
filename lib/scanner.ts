@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
-import { assertAllowedProductUrl, canonicalizeStoreUrl, detectStore, resolveSupportedProductUrl } from "@/lib/stores";
+import { assertAllowedProductUrl, canonicalizeStoreUrl, detectStore, getStoreLabel, resolveSupportedProductUrl } from "@/lib/stores";
 import type { PriceSampleDocument, ProductDocument, ScanResult, StoreKey } from "@/lib/types";
 
 const USER_AGENT =
@@ -69,6 +69,7 @@ export async function scanAndSaveProduct(inputUrl: string, userId?: string): Pro
     normalizedUrl: canonicalUrl,
     userId,
     store,
+    storeLabel: getStoreLabel(store, canonicalUrl, existing?.storeLabel),
     title: snapshot.title,
     imageUrl: snapshot.imageUrl,
     currency: snapshot.currency,
@@ -84,6 +85,7 @@ export async function scanAndSaveProduct(inputUrl: string, userId?: string): Pro
     { _id: productId },
     {
       $set: productUpdate,
+      $unset: { lastError: "" },
       $setOnInsert: {
         _id: productId,
         createdAt: now
@@ -151,6 +153,7 @@ async function fetchHtml(
   const proxyConfig = getProxyConfig();
   let target = mode === "proxy" ? buildProxyUrl(url, proxyConfig) : url;
   let lastError: unknown;
+  let redirects = 0;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {
@@ -164,6 +167,8 @@ async function fetchHtml(
       });
 
       if (mode === "direct" && isRedirect(response.status)) {
+        redirects += 1;
+        if (redirects > 5) throw new Error("The store returned too many redirects.");
         target = followSafeRedirect(target, response, store);
         continue;
       }
@@ -331,7 +336,7 @@ function parseProductHtml(html: string, store: StoreKey): ParsedProduct {
   const meta = parseMeta(html);
   const title = cleanText(jsonLd.title || meta.title || extractTitle(html) || "Tracked product");
   const price = jsonLd.price || meta.price || parseStoreSpecificPrice(html, store) || parseVisiblePrice(html);
-  const currency = jsonLd.currency || meta.currency || "INR";
+  const currency = normalizeCurrency(jsonLd.currency || meta.currency || "INR");
   const imageUrl = jsonLd.imageUrl || meta.imageUrl;
 
   return {
@@ -370,18 +375,28 @@ function parseJsonLd(html: string) {
 }
 
 function parseMeta(html: string) {
-  const meta = (name: string) => {
-    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const match = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${escaped}["'][^>]+content=["']([^"']+)["'][^>]*>`, "i"));
-    return match ? decodeHtml(match[1]) : undefined;
-  };
+  const values = new Map<string, string>();
+  const tags = html.matchAll(/<meta\b[^>]*>/gi);
 
+  for (const match of tags) {
+    const tag = match[0];
+    const key = readAttribute(tag, "property") || readAttribute(tag, "name");
+    const content = readAttribute(tag, "content");
+    if (key && content) values.set(key.toLowerCase(), decodeHtml(content));
+  }
+
+  const meta = (name: string) => values.get(name.toLowerCase());
   return {
     title: meta("og:title"),
     price: toPrice(meta("product:price:amount") || meta("og:price:amount")),
     currency: meta("product:price:currency") || meta("og:price:currency") || "INR",
     imageUrl: meta("og:image")
   };
+}
+
+function readAttribute(tag: string, attribute: string): string | undefined {
+  const match = tag.match(new RegExp(`${attribute}\\s*=\\s*["']([^"']+)["']`, "i"));
+  return match?.[1];
 }
 
 function parseStoreSpecificPrice(html: string, store: StoreKey): number | undefined {
@@ -418,6 +433,17 @@ function parseStoreSpecificPrice(html: string, store: StoreKey): number | undefi
       parseFirst(decoded, /class=["'][^"']*(?:prod-sp|price)[^"']*["'][^>]*>\s*(?:\u20b9|Rs\.?)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
       parseFirst(decoded, /"wasPriceData"\s*:\s*\{[^{}]*"value"\s*:\s*([0-9,.]+)/i),
       parseFirst(decoded, /"price"\s*:\s*\{[^{}]*"formattedValue"[^{}]*(?:\u20b9|Rs\.?)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i)
+    );
+  }
+
+  // The generic adapter handles stores that expose common ecommerce markup but
+  // do not have a dedicated adapter. JSON-LD and Open Graph are preferred above.
+  if (store === "other") {
+    candidates.push(
+      parseFirst(decoded, /data-testid=["'][^"']*(?:sale|current|selling)?price[^"']*["'][^>]*>\s*(?:[^0-9]{0,8})?([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i),
+      parseFirst(decoded, /(?:data-price|data-sale-price|data-current-price)=["']([0-9,.]+)["']/i),
+      parseFirst(decoded, /class=["'][^"']*(?:sale-price|current-price|selling-price|product-price|price)[^"']*["'][^>]*>\s*(?:[^0-9]{0,8})([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i),
+      parseFirst(decoded, /"(?:salePrice|currentPrice|sellingPrice)"\s*:\s*["']?([0-9,.]+)/i)
     );
   }
 
@@ -468,6 +494,15 @@ function toPrice(value: unknown): number | undefined {
   if (typeof value !== "string" && typeof value !== "number") return undefined;
   const price = Number(String(value).replace(/[^0-9.]/g, ""));
   return Number.isFinite(price) && price > 0 ? price : undefined;
+}
+
+function normalizeCurrency(value: unknown): string {
+  const raw = String(value || "INR").trim().toUpperCase();
+  if (raw === "₹" || raw === "RS" || raw === "RS.") return "INR";
+  if (raw === "$" || raw === "US$") return "USD";
+  if (raw === "£") return "GBP";
+  if (raw === "€") return "EUR";
+  return /^[A-Z]{3}$/.test(raw) ? raw : "INR";
 }
 
 function cleanText(value: string): string {

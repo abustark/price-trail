@@ -1,7 +1,8 @@
+import type { Session } from "next-auth";
 import { auth, signIn, signOut } from "@/auth";
 
-export async function AuthButton() {
-  const session = await auth();
+export async function AuthButton({ session }: { session?: Session | null } = {}) {
+  const currentSession: Session | null = session === undefined ? await auth() : session;
   const googleReady = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
   if (!googleReady) {
@@ -13,7 +14,7 @@ export async function AuthButton() {
     );
   }
 
-  if (!session?.user) {
+  if (!currentSession?.user) {
     return (
       <form
         action={async () => {
@@ -31,13 +32,13 @@ export async function AuthButton() {
 
   return (
     <div className="user-chip">
-      {session.user.image ? (
+      {currentSession.user.image ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={session.user.image} alt="" />
+        <img src={currentSession.user.image} alt="" />
       ) : (
-        <span className="avatar-fallback">{session.user.name?.charAt(0) || "U"}</span>
+        <span className="avatar-fallback">{currentSession.user.name?.charAt(0) || "U"}</span>
       )}
-      <span>{session.user.name || session.user.email || "Signed in"}</span>
+      <span>{currentSession.user.name || currentSession.user.email || "Signed in"}</span>
       <form
         action={async () => {
           "use server";

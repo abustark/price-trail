@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PriceTrail",
-  description: "Track ecommerce price history across Amazon, Flipkart, Myntra and Ajio."
+  title: "PriceTrail — buy at the right time",
+  description: "Track product prices across Amazon, Flipkart, Myntra, AJIO and the wider web with a lightweight price history."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
