@@ -22,7 +22,7 @@ export default async function Home() {
   const signedIn = Boolean(session?.user);
 
   return (
-    <main className="shell" id="top">
+    <main className="shell home-shell" id="top">
       <header className="topbar">
         <Link className="brand" href="/" aria-label="PriceTrail home">
           <LogoMark />
@@ -48,7 +48,7 @@ export default async function Home() {
           <div className="hero-points">
             <span><Icon name="check" size={15} /> One link is all it takes</span>
             <span><Icon name="check" size={15} /> Automatic price snapshots</span>
-            <span><Icon name="check" size={15} /> Your links stay private</span>
+            <span><Icon name="check" size={15} /> {signedIn ? "Your links stay private" : "Sign in to keep links private"}</span>
           </div>
         </div>
 
@@ -60,7 +60,7 @@ export default async function Home() {
               <h2>Drop in a product link</h2>
             </div>
           </div>
-          <TrackForm />
+          <TrackForm signedIn={signedIn} />
           <div className="tracker-card-foot"><Icon name="globe" size={15} /> Amazon, Flipkart, Myntra, AJIO &amp; more</div>
         </div>
       </section>
@@ -72,7 +72,7 @@ export default async function Home() {
       </section>
 
       <section className="stats-row" aria-label="Tracker summary">
-        <div className="stat stat-featured"><span>Tracked products</span><strong>{products.length}</strong><small>{signedIn ? "in your watchlist" : "in your session"}</small></div>
+        <div className="stat stat-featured"><span>Tracked products</span><strong>{products.length}</strong><small>{signedIn ? "in your watchlist" : "guest demo items"}</small></div>
         <div className="stat"><span>Active watches</span><strong>{activeCount}</strong><small>automatic snapshots</small></div>
         <div className="stat"><span>Stores covered</span><strong>{storeCount}</strong><small>{lastScan ? `last scan ${formatDate(lastScan)}` : "built for the open web"}</small></div>
       </section>
@@ -83,7 +83,7 @@ export default async function Home() {
             <div className="section-label"><span className="section-label-line" /> Your watchlist</div>
             <h2>Everything worth watching, in one place.</h2>
           </div>
-          <span className="list-count">{`${products.length} ${products.length === 1 ? "item" : "items"}`}</span>
+          <span className="list-count">{signedIn ? `${products.length} ${products.length === 1 ? "item" : "items"}` : `${products.length} demo ${products.length === 1 ? "item" : "items"}`}</span>
         </div>
         <ProductList products={products.map((product) => serializeProduct(product))} signedIn={signedIn} />
       </section>

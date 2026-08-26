@@ -52,9 +52,7 @@ export default async function ProductPage({ params }: Props) {
           <LogoMark />
           <span>PriceTrail</span>
         </Link>
-        <div className="action-row">
-          <RescanButton productId={id} />
-          <ResetHistoryButton productId={id} />
+        <div className="top-actions">
           <AuthButton session={session} />
           <ThemeToggle />
         </div>
@@ -92,6 +90,10 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </div>
         {product.lastError ? <p className="error">Last scan error: {product.lastError}</p> : null}
+        <div className="product-actions" aria-label="Product actions">
+          <RescanButton productId={id} />
+          <ResetHistoryButton productId={id} />
+        </div>
       </section>
 
       <section className="grid stats-grid" aria-label="Price statistics">

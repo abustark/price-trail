@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Icon } from "@/components/Icons";
 
-export function TrackForm() {
+export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "navigating" | "error">("idle");
@@ -98,7 +98,7 @@ export function TrackForm() {
           <span>{status === "navigating" ? "Opening" : status === "loading" ? "Scanning" : "Track price"}</span>
         </button>
       </form>
-      <div className="form-note"><Icon name="lock" size={14} /> {status === "idle" ? "Private watchlist · no spam" : "This can take a few seconds on the first scan"}</div>
+      <div className="form-note"><Icon name={signedIn ? "lock" : "globe"} size={14} /> {status === "idle" ? signedIn ? "Private watchlist · no spam" : "Guest demo · sign in to sync across devices" : "This can take a few seconds on the first scan"}</div>
       <div className={`status-slot ${message ? "has-message" : ""}`}>
         {message ? (
           <div className={`status-banner ${status}`} role={status === "error" ? "alert" : "status"}>
