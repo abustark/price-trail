@@ -63,14 +63,14 @@ export default async function ProductPage({ params }: Props) {
         <div className="product-hero-card">
           <ProductImage src={product.imageUrl} alt={product.title} />
           <div>
-            <div className="detail-kicker"><span className="status-dot" /> Tracking is active</div>
+            <div className="detail-kicker"><span className="status-dot" /> Watching price</div>
             <h1 className="product-hero-title">{product.title}</h1>
             <div className="product-meta">
               <span className="meta-chip">{getStoreLabel(product.store, product.normalizedUrl, product.storeLabel)}</span>
               <a className="meta-chip" href={product.normalizedUrl} target="_blank" rel="noreferrer">
                 Open store page <Icon name="external" size={12} />
               </a>
-              <span className="meta-chip">Every {product.scanEveryHours} hours</span>
+              <span className="meta-chip">Every {product.scanEveryHours}h</span>
               {product.mrp && product.lastPrice && product.mrp > product.lastPrice ? (
                 <span className="meta-chip" style={{ color: "rgb(245, 158, 11)", borderColor: "rgba(245, 158, 11, 0.3)" }}>
                   MRP {formatMoney(product.mrp, product.currency)} • {Math.round(((product.mrp - product.lastPrice) / product.mrp) * 100)}% off
@@ -81,7 +81,7 @@ export default async function ProductPage({ params }: Props) {
           </div>
           <div className="price-block">
             <span>Current price</span>
-            <strong>{product.lastPrice != null ? formatMoney(product.lastPrice, product.currency) : "—"}</strong>
+            <strong>{product.lastPrice != null ? formatMoney(product.lastPrice, product.currency) : "-"}</strong>
             {product.mrp && product.lastPrice && product.mrp > product.lastPrice ? (
               <small style={{ textDecoration: "line-through", color: "var(--muted)", display: "block", marginTop: "2px" }}>
                 MRP: {formatMoney(product.mrp, product.currency)}
@@ -122,7 +122,7 @@ export default async function ProductPage({ params }: Props) {
           />
         </div>
         <div className="panel">
-          <div className="panel-heading-row"><div><p className="eyebrow">Latest observations</p><h2>Recent scans</h2></div><span className="list-count">{samples.length} total</span></div>
+          <div className="panel-heading-row"><h2>Recent scans</h2><span className="list-count">{samples.length} total</span></div>
           <div className="samples">
             {[...samples].reverse().slice(0, 12).map((sample) => {
               const isHistorical = sample.source === "historical" || sample.source === "mrp-baseline";
@@ -132,12 +132,12 @@ export default async function ProductPage({ params }: Props) {
                     <span>{formatDate(sample.capturedAt.toISOString())}</span>
                     <small>
                       {sample.source === "mrp-baseline"
-                        ? "MRP Baseline"
+                        ? "MRP baseline"
                         : sample.source === "historical"
-                        ? "Historical import"
+                        ? "Historical"
                         : sample.source === "proxy"
-                        ? "Proxy verified scan"
-                        : "Live verified scan"}
+                        ? "Proxy scan"
+                        : "Live scan"}
                       {sample.inStock === false ? " · Out of stock" : ""}
                     </small>
                   </div>

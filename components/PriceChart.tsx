@@ -1,3 +1,5 @@
+import { Icon } from "@/components/Icons";
+
 type ChartSample = {
   price: number;
   capturedAt: string;
@@ -14,7 +16,7 @@ export function PriceChart({
   mrp?: number;
 }) {
   if (samples.length === 0) {
-    return <div className="chart-empty"><span className="empty-icon">—</span><p>No price history yet. Scan again to add another observation.</p></div>;
+    return <div className="chart-empty"><span className="empty-icon"><Icon name="trend" size={18} /></span><p>No price history yet. Scan again to add another observation.</p></div>;
   }
 
   const width = 720;
@@ -119,7 +121,7 @@ export function PriceChart({
                   strokeWidth="3"
                 />
               )}
-              <title>{`${formatMoney(point.sample.price, currency)} • ${isHist ? "Historical Baseline" : "Live Verified Scan"} on ${formatDate(point.sample.capturedAt)}`}</title>
+              <title>{`${formatMoney(point.sample.price, currency)} • ${isHist ? "Historical" : "Live scan"} on ${formatDate(point.sample.capturedAt)}`}</title>
             </g>
           );
         })}
@@ -136,16 +138,16 @@ export function PriceChart({
       <div className="chart-caption">
         <div style={{ display: "flex", gap: "14px", alignItems: "center", flexWrap: "wrap" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-            <i className="chart-legend-dot" /> Live verified scans
+            <i className="chart-legend-dot" /> Live
           </span>
           {hasHistorical ? (
             <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--muted)" }}>
-              <span style={{ width: "8px", height: "8px", borderRadius: "50%", border: "1.5px dashed var(--accent)", display: "inline-block" }} /> Historical baseline
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", border: "1.5px dashed var(--accent)", display: "inline-block" }} /> Historical
             </span>
           ) : null}
           {mrp ? (
             <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "rgb(245, 158, 11)" }}>
-              <span style={{ width: "12px", height: "2px", borderTop: "2px dashed rgb(245, 158, 11)", display: "inline-block" }} /> MRP Reference
+              <span style={{ width: "12px", height: "2px", borderTop: "2px dashed rgb(245, 158, 11)", display: "inline-block" }} /> MRP
             </span>
           ) : null}
         </div>

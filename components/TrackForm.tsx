@@ -16,7 +16,7 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
     if (!url.trim()) return;
 
     setStatus("loading");
-    setMessage("Reading the product page and capturing its current price...");
+    setMessage("Reading product price...");
 
     try {
       const response = await fetch("/api/products", {
@@ -34,13 +34,13 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
 
       const productPath = `/products/${payload.product._id}`;
       setStatus("navigating");
-      setMessage("Product added. Opening your price timeline...");
+      setMessage("Added. Opening price history...");
       setUrl("");
       router.prefetch(productPath);
       router.push(productPath);
     } catch {
       setStatus("error");
-      setMessage("Network error while scanning. Check your connection and try again.");
+      setMessage("Connection failed. Try again.");
     }
   }
 
@@ -71,7 +71,9 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
       <form className="search-form" onSubmit={handleSubmit}>
         <div className="input-wrap">
           <Icon name="link" size={18} />
+          <label className="sr-only" htmlFor="product-url">Product URL</label>
           <input
+            id="product-url"
             className="search-input"
             value={url}
             onChange={(event) => setUrl(event.target.value)}
@@ -98,7 +100,7 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
           <span>{status === "navigating" ? "Opening" : status === "loading" ? "Scanning" : "Track price"}</span>
         </button>
       </form>
-      <div className="form-note"><Icon name={signedIn ? "lock" : "globe"} size={14} /> {status === "idle" ? signedIn ? "Private watchlist · no spam" : "Guest demo · sign in to sync across devices" : "This can take a few seconds on the first scan"}</div>
+      <div className="form-note"><Icon name={signedIn ? "lock" : "globe"} size={14} /> {status === "idle" ? signedIn ? "Private watchlist" : "Guest demo · sign in to sync" : "Scanning..."}</div>
       <div className={`status-slot ${message ? "has-message" : ""}`}>
         {message ? (
           <div className={`status-banner ${status}`} role={status === "error" ? "alert" : "status"}>
@@ -111,9 +113,9 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
         <div className="page-transition" role="status" aria-live="polite">
           <div className="transition-card">
             <span className="transition-ring" aria-hidden="true" />
-            <p className="eyebrow">Opening history</p>
-            <strong>Building the price timeline</strong>
-            <span className="muted">Loading product stats, chart and recent scans...</span>
+            <p className="eyebrow">Price history</p>
+            <strong>Loading your timeline</strong>
+            <span className="muted">Almost there.</span>
           </div>
         </div>
       ) : null}

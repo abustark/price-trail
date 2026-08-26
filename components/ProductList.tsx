@@ -46,7 +46,7 @@ export function ProductList({ products, signedIn = true }: { products: ProductLi
             </div>
             <div className="product-card-price">
               <span>Current price</span>
-              <strong>{product.lastPrice != null ? formatMoney(product.lastPrice, product.currency) : "—"}</strong>
+              <strong>{product.lastPrice != null ? formatMoney(product.lastPrice, product.currency) : "-"}</strong>
             </div>
             <Icon name="arrow" size={18} />
           </Link>
