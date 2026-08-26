@@ -72,9 +72,9 @@ export default async function Home() {
       </section>
 
       <section className="stats-row" aria-label="Tracker summary">
-        <div className="stat stat-featured"><span>Tracked products</span><strong>{signedIn ? products.length : "—"}</strong><small>{signedIn ? "in your watchlist" : "sign in to get started"}</small></div>
-        <div className="stat"><span>Active watches</span><strong>{signedIn ? activeCount : "—"}</strong><small>automatic snapshots</small></div>
-        <div className="stat"><span>Stores covered</span><strong>{signedIn ? storeCount : "—"}</strong><small>{lastScan ? `last scan ${formatDate(lastScan)}` : "built for the open web"}</small></div>
+        <div className="stat stat-featured"><span>Tracked products</span><strong>{products.length}</strong><small>{signedIn ? "in your watchlist" : "in your session"}</small></div>
+        <div className="stat"><span>Active watches</span><strong>{activeCount}</strong><small>automatic snapshots</small></div>
+        <div className="stat"><span>Stores covered</span><strong>{storeCount}</strong><small>{lastScan ? `last scan ${formatDate(lastScan)}` : "built for the open web"}</small></div>
       </section>
 
       <section className="watchlist-section" id="watchlist">
@@ -83,7 +83,7 @@ export default async function Home() {
             <div className="section-label"><span className="section-label-line" /> Your watchlist</div>
             <h2>Everything worth watching, in one place.</h2>
           </div>
-          <span className="list-count">{signedIn ? `${products.length} ${products.length === 1 ? "item" : "items"}` : "Private by default"}</span>
+          <span className="list-count">{`${products.length} ${products.length === 1 ? "item" : "items"}`}</span>
         </div>
         <ProductList products={products.map((product) => serializeProduct(product))} signedIn={signedIn} />
       </section>
@@ -112,12 +112,14 @@ export default async function Home() {
 }
 
 async function loadProducts(userId?: string): Promise<ProductDocument[]> {
-  if (!userId) return [];
   try {
     const db = await getDb();
+    const targetUser = userId || "guest";
     return await db
       .collection<ProductDocument>("products")
-      .find({ userId })
+      .find({
+        $or: [{ userId: targetUser }, { userId: "guest" }, { userId: { $exists: false } }]
+      })
       .sort({ updatedAt: -1 })
       .limit(50)
       .toArray();
