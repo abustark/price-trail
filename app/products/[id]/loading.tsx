@@ -1,11 +1,14 @@
+import Link from "next/link";
+import { LogoMark } from "@/components/Icons";
+
 export default function ProductLoading() {
   return (
     <main className="shell">
       <header className="topbar">
-        <a className="brand" href="/">
-          <span className="mark">PT</span>
+        <Link className="brand" href="/">
+          <LogoMark />
           <span>PriceTrail</span>
-        </a>
+        </Link>
       </header>
 
       <section className="panel loading-panel">
