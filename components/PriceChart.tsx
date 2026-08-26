@@ -23,8 +23,16 @@ export function PriceChart({
   const prices = samples.map((sample) => sample.price);
   if (mrp && mrp > 0) prices.push(mrp);
 
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
+  const rawMin = Math.min(...prices);
+  const rawMax = Math.max(...prices);
+  const rawSpread = rawMax - rawMin;
+
+  // Visual baseline scaling:
+  // If price spread is tiny (e.g. ₹1 difference), enforce sensible visual headroom (at least 8% of max)
+  // so minor fluctuations look like clean, realistic steady lines rather than severe cliffs.
+  const minSpread = Math.max(Math.round(rawMax * 0.08), 25);
+  const min = rawSpread < minSpread ? Math.max(0, rawMax - minSpread) : rawMin;
+  const max = rawMax;
   const range = Math.max(max - min, 1);
 
   const points = samples.map((sample, index) => {
