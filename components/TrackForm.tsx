@@ -82,7 +82,14 @@ export function TrackForm() {
             disabled={busy}
             required
           />
-          <button className="paste-button" type="button" onClick={pasteFromClipboard} disabled={busy || pasteLoading}>
+          <button
+            className="paste-button"
+            type="button"
+            onClick={pasteFromClipboard}
+            disabled={busy || pasteLoading}
+            aria-label="Paste URL from clipboard"
+            title="Paste from clipboard"
+          >
             {pasteLoading ? "…" : "Paste"}
           </button>
         </div>
