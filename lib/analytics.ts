@@ -1,11 +1,12 @@
 import type { PriceSampleDocument, PriceStats } from "@/lib/types";
 
-export function calculatePriceStats(samples: PriceSampleDocument[]): PriceStats {
+export function calculatePriceStats(samples: PriceSampleDocument[], mrp?: number): PriceStats {
   const sorted = [...samples].sort((a, b) => a.capturedAt.getTime() - b.capturedAt.getTime());
 
   if (sorted.length === 0) {
     return {
       sampleCount: 0,
+      mrp,
       changes: {
         count: 0,
         description: "No price history yet"
@@ -16,6 +17,14 @@ export function calculatePriceStats(samples: PriceSampleDocument[]): PriceStats 
   const highest = sorted.reduce((best, item) => (item.price > best.price ? item : best), sorted[0]);
   const lowest = sorted.reduce((best, item) => (item.price < best.price ? item : best), sorted[0]);
   const current = sorted[sorted.length - 1];
+
+  const effectiveMrp = mrp && mrp > current.price ? mrp : undefined;
+  const savings = effectiveMrp
+    ? {
+        amount: effectiveMrp - current.price,
+        percentage: Math.round(((effectiveMrp - current.price) / effectiveMrp) * 100)
+      }
+    : undefined;
 
   const counts = new Map<number, number>();
   sorted.forEach((sample) => {
@@ -63,6 +72,8 @@ export function calculatePriceStats(samples: PriceSampleDocument[]): PriceStats 
       price: current.price,
       capturedAt: current.capturedAt.toISOString()
     },
+    mrp: effectiveMrp,
+    savings,
     changes: {
       count: changedAt.length,
       averageHoursBetweenChanges: averageHours ? Math.round(averageHours * 10) / 10 : undefined,

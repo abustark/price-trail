@@ -1,14 +1,17 @@
 # PriceTrail
 
-PriceTrail is a Vercel-ready ecommerce price tracker for Amazon India, Flipkart, Myntra and Ajio links.
+PriceTrail is a Vercel-ready ecommerce price tracker with a fast, focused watchlist UI. It has dedicated extraction paths for Amazon India, Flipkart, Myntra and AJIO, plus a generic structured-data adapter for product pages across the wider web.
 
-It records price snapshots over time and reports:
+Paste one product URL to record price snapshots over time and report:
 
 - highest tracked price and date
 - lowest tracked price and date
 - most common tracked price
 - how many times the price changed
 - average change frequency once enough history exists
+- current price, stock state and scan source for recent observations
+
+The generic adapter first looks for schema.org Product/Offer JSON-LD, then Open Graph price metadata, then common `data-price`, `data-testid` and commerce JSON fields. Dedicated store adapters can be added without changing the watchlist or analytics UI.
 
 ## Tech Stack
 
