@@ -51,8 +51,8 @@ async function processNextInQueue(): Promise<void> {
 
   try {
     await backfillProductHistory(current);
-  } catch (error) {
-    console.error(`Historical backfill failed for ${current.canonicalUrl}:`, error);
+  } catch {
+    // Silently handle backfill errors
   } finally {
     // Respectful delay between backfill jobs
     await new Promise((resolve) => setTimeout(resolve, 1500));
