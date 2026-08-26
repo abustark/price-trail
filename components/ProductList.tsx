@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getStoreLabel } from "@/lib/stores";
 import type { StoreKey } from "@/lib/types";
 import { Icon } from "@/components/Icons";
+import { ProductImage } from "@/components/ProductImage";
 
 type ProductListItem = {
   _id?: string;
@@ -35,12 +36,7 @@ export function ProductList({ products, signedIn = true }: { products: ProductLi
         const storeLabel = getStoreLabel(product.store, product.normalizedUrl, product.storeLabel);
         return (
           <Link className="product-card" href={`/products/${product._id}`} key={product._id}>
-            {product.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="product-image" src={product.imageUrl} alt="" loading="lazy" />
-            ) : (
-              <span className="product-image product-image-fallback"><Icon name="spark" size={18} /></span>
-            )}
+            <ProductImage src={product.imageUrl} alt={product.title} />
             <div className="product-card-main">
               <div className="product-title">{product.title}</div>
               <div className="product-meta">

@@ -5,6 +5,7 @@ import { calculatePriceStats } from "@/lib/analytics";
 import { getDb } from "@/lib/db";
 import type { PriceSampleDocument, ProductDocument } from "@/lib/types";
 import { PriceChart } from "@/components/PriceChart";
+import { ProductImage } from "@/components/ProductImage";
 import { RescanButton } from "@/components/RescanButton";
 import { ResetHistoryButton } from "@/components/ResetHistoryButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -62,12 +63,7 @@ export default async function ProductPage({ params }: Props) {
       <Link className="back-link" href="/" aria-label="Back to watchlist"><Icon name="arrow" size={16} /> Back to watchlist</Link>
       <section className="panel product-hero">
         <div className="product-hero-card">
-          {product.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="product-image" src={product.imageUrl} alt="" />
-          ) : (
-            <span className="product-image product-image-fallback"><Icon name="spark" size={20} /></span>
-          )}
+          <ProductImage src={product.imageUrl} alt={product.title} />
           <div>
             <div className="detail-kicker"><span className="status-dot" /> Tracking is active</div>
             <h1 className="product-hero-title">{product.title}</h1>
@@ -100,14 +96,14 @@ export default async function ProductPage({ params }: Props) {
 
       <section className="grid stats-grid" aria-label="Price statistics">
         <Stat label="Current price" value={stats.current ? formatMoney(stats.current.price, product.currency) : "None"} note={stats.current ? `as of ${formatDate(stats.current.capturedAt)}` : undefined} />
-        {stats.savings ? (
-          <Stat label="Savings from MRP" value={formatMoney(stats.savings.amount, product.currency)} note={`${stats.savings.percentage}% discount on listed MRP`} />
-        ) : (
-          <Stat label="Lowest price" value={stats.lowest ? formatMoney(stats.lowest.price, product.currency) : "None"} note={stats.lowest ? formatDate(stats.lowest.capturedAt) : undefined} />
-        )}
+        <Stat
+          label="Lowest price"
+          value={stats.lowest ? formatMoney(stats.lowest.price, product.currency) : "None"}
+          note={stats.lowest ? `${formatDate(stats.lowest.capturedAt)}${stats.savings ? ` · ${stats.savings.percentage}% below MRP` : ""}` : undefined}
+        />
         <Stat label="Highest observed" value={stats.highest ? formatMoney(stats.highest.price, product.currency) : "None"} note={stats.highest ? formatDate(stats.highest.capturedAt) : undefined} />
         <Stat label="Typical price" value={stats.common ? formatMoney(stats.common.price, product.currency) : "None"} note={stats.common ? `${stats.common.percentage}% of snapshots` : undefined} />
-        <Stat label="Price changes" value={String(stats.changes.count)} note={stats.changes.description} />
+        <Stat label="Price observations" value={String(stats.sampleCount)} note={`${stats.changes.count} ${stats.changes.count === 1 ? "change" : "changes"} observed`} />
       </section>
 
       <section className="detail-grid">

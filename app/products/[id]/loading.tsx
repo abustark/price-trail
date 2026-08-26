@@ -18,8 +18,8 @@ export default function ProductLoading() {
         <p className="muted">Fetching price samples and calculating high, low, common price and change frequency.</p>
       </section>
 
-      <section className="grid" aria-label="Loading statistics">
-        {[1, 2, 3, 4].map((item) => (
+      <section className="grid stats-grid" aria-label="Loading statistics">
+        {[1, 2, 3, 4, 5].map((item) => (
           <div className="stat skeleton-card" key={item}>
             <span />
             <strong />

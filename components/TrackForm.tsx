@@ -99,12 +99,14 @@ export function TrackForm() {
         </button>
       </form>
       <div className="form-note"><Icon name="lock" size={14} /> {status === "idle" ? "Private watchlist · no spam" : "This can take a few seconds on the first scan"}</div>
-      {message ? (
-        <div className={`status-banner ${status}`} role={status === "error" ? "alert" : "status"}>
-          {busy ? <span className="pulse-dot" aria-hidden="true" /> : null}
-          <span>{message}</span>
-        </div>
-      ) : null}
+      <div className={`status-slot ${message ? "has-message" : ""}`}>
+        {message ? (
+          <div className={`status-banner ${status}`} role={status === "error" ? "alert" : "status"}>
+            {busy ? <span className="pulse-dot" aria-hidden="true" /> : null}
+            <span>{message}</span>
+          </div>
+        ) : null}
+      </div>
       {status === "navigating" ? (
         <div className="page-transition" role="status" aria-live="polite">
           <div className="transition-card">

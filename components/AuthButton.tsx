@@ -7,7 +7,7 @@ export async function AuthButton({ session }: { session?: Session | null } = {})
 
   if (!googleReady) {
     return (
-      <div className="auth-pill disabled" title="Add Google OAuth credentials to enable sign in">
+      <div className="auth-pill disabled" title="Add Google OAuth credentials to enable sign in" aria-label="Sign-in setup needed">
         <span className="auth-dot" />
         <span>Sign in setup needed</span>
       </div>
