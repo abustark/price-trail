@@ -251,7 +251,8 @@ button { -webkit-tap-highlight-color: transparent; }
   .theme-switch, .auth-pill, .user-chip { min-height: 44px; padding: 5px 8px; }
   .theme-switch { width: 44px; padding: 5px; border-radius: 50%; }
   .theme-switch .theme-text { display: none; }
-  .auth-pill.disabled > span:last-child, .user-chip > .user-name { display: none; }
+  .user-chip > .user-name { display: none; }
+  .auth-setup { font-size: 10px; }
   .user-chip { max-width: none; gap: 5px; padding-inline: 6px; overflow: hidden; }
   .user-chip .plain-action { width: 28px; height: 30px; justify-content: center; padding: 0; font-size: 0; }
   .user-chip .plain-action span { display: none; }
