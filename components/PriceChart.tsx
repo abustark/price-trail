@@ -22,7 +22,8 @@ export function PriceChart({
   const width = 720;
   const height = 300;
   const padding = 34;
-  const prices = samples.map((sample) => sample.price);
+  const chartSamples = downsample(samples, 220);
+  const prices = chartSamples.map((sample) => sample.price);
   if (mrp && mrp > 0) prices.push(mrp);
 
   const rawMin = Math.min(...prices);
@@ -37,8 +38,8 @@ export function PriceChart({
   const max = rawMax;
   const range = Math.max(max - min, 1);
 
-  const points = samples.map((sample, index) => {
-    const x = samples.length === 1 ? width / 2 : padding + (index / (samples.length - 1)) * (width - padding * 2);
+  const points = chartSamples.map((sample, index) => {
+    const x = chartSamples.length === 1 ? width / 2 : padding + (index / (chartSamples.length - 1)) * (width - padding * 2);
     const y = height - padding - ((sample.price - min) / range) * (height - padding * 2);
     const isHistorical = sample.source === "historical" || sample.source === "mrp-baseline";
     return { x, y, sample, isHistorical };
@@ -53,7 +54,12 @@ export function PriceChart({
 
   return (
     <div className="chart-wrap">
-      <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Price history chart">
+      <svg
+        className="chart"
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label={`Price history chart. Current ${formatMoney(samples[samples.length - 1].price, currency)}. Lowest ${formatMoney(Math.min(...samples.map((sample) => sample.price)), currency)}. Highest ${formatMoney(Math.max(...samples.map((sample) => sample.price)), currency)}. ${samples.length} ${samples.length === 1 ? "observation" : "observations"}.`}
+      >
         <defs>
           <linearGradient id="chart-fill" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0" stopColor="var(--accent)" stopOpacity=".22" />
@@ -126,10 +132,10 @@ export function PriceChart({
           );
         })}
 
-        {samples.length > 1 ? (
+        {chartSamples.length > 1 ? (
           <>
-            <text x={padding} y={height - 1} fontSize="10" fill="var(--muted)">{formatShortDate(samples[0].capturedAt)}</text>
-            <text x={width - padding} y={height - 1} textAnchor="end" fontSize="10" fill="var(--muted)">{formatShortDate(current.sample.capturedAt)}</text>
+            <text x={padding} y={height - 1} fontSize="10" fill="var(--muted)">{formatShortDate(chartSamples[0].capturedAt)}</text>
+            <text x={width - padding} y={height - 1} textAnchor="end" fontSize="10" fill="var(--muted)">{formatShortDate(chartSamples[chartSamples.length - 1].capturedAt)}</text>
           </>
         ) : null}
       </svg>
@@ -155,6 +161,33 @@ export function PriceChart({
       </div>
     </div>
   );
+}
+
+function downsample<T extends { price: number }>(samples: T[], maxPoints: number): T[] {
+  if (samples.length <= maxPoints) return samples;
+
+  const important = new Set([0, samples.length - 1]);
+  let lowestIndex = 0;
+  let highestIndex = 0;
+
+  samples.forEach((sample, index) => {
+    if (sample.price < samples[lowestIndex].price) lowestIndex = index;
+    if (sample.price > samples[highestIndex].price) highestIndex = index;
+  });
+
+  important.add(lowestIndex);
+  important.add(highestIndex);
+  const remaining = Math.max(0, maxPoints - important.size);
+  const step = (samples.length - 1) / (remaining + 1);
+
+  for (let index = 1; index <= remaining; index += 1) {
+    important.add(Math.round(index * step));
+  }
+
+  return [...important]
+    .sort((a, b) => a - b)
+    .slice(0, maxPoints)
+    .map((index) => samples[index]);
 }
 
 function formatMoney(value: number, currency: string) {

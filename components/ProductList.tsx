@@ -23,9 +23,9 @@ export function ProductList({ products, signedIn = true }: { products: ProductLi
     return (
       <div className="empty-state">
         <div className="empty-icon"><Icon name={signedIn ? "spark" : "lock"} size={21} /></div>
-        <strong>{signedIn ? "Your watchlist is ready." : "Your watchlist is private."}</strong>
-        <p>{signedIn ? "Paste a product link above and we’ll start building its price story." : "Sign in with Google to save products and access your price history anywhere."}</p>
-        <a className="text-link" href="#top">{signedIn ? "Add your first product ↑" : "Sign in above ↑"}</a>
+        <strong>Start your watchlist.</strong>
+        <p>Paste a link above to start tracking.</p>
+        <a className="text-link" href="#main-content">Add a product ↑</a>
       </div>
     );
   }
@@ -41,7 +41,7 @@ export function ProductList({ products, signedIn = true }: { products: ProductLi
               <div className="product-title">{product.title}</div>
               <div className="product-meta">
                 <span className="store-chip"><span className={`store-dot ${product.store}`} />{storeLabel}</span>
-                <span className="scan-status"><span className={product.lastError ? "status-dot error-dot" : "status-dot"} />{product.lastError ? "Scan needs attention" : product.active === false ? "Paused" : product.lastScannedAt ? `Updated ${formatRelativeDate(product.lastScannedAt)}` : "Waiting for first scan"}</span>
+                <span className="scan-status"><span className={product.lastError ? "status-dot error-dot" : "status-dot"} />{product.lastError ? "Needs attention" : product.active === false ? "Paused" : product.lastScannedAt ? formatRelativeDate(product.lastScannedAt) : "Waiting"}</span>
               </div>
             </div>
             <div className="product-card-price">

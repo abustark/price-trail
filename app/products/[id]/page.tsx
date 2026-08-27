@@ -13,7 +13,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Icon, LogoMark } from "@/components/Icons";
 import { getStoreLabel } from "@/lib/stores";
 import { AuthButton } from "@/components/AuthButton";
-import { auth } from "@/auth";
+import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -24,14 +24,14 @@ type Props = {
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
   if (!ObjectId.isValid(id)) notFound();
-  const session = await auth();
-  const userId = session?.user?.id || "guest";
+  const viewer = await getViewer();
+  if (!viewer.userId) notFound();
 
   const db = await getDb();
   const productId = new ObjectId(id);
   const product = await db.collection<ProductDocument>("products").findOne({
     _id: productId,
-    $or: [{ userId }, { userId: "guest" }, { userId: { $exists: false } }]
+    userId: viewer.userId
   });
   if (!product) notFound();
 
@@ -46,14 +46,14 @@ export default async function ProductPage({ params }: Props) {
   const isAtLowest = samples.length > 1 && stats.current?.price === stats.lowest?.price;
 
   return (
-    <main className="shell">
+    <main className="shell" id="main-content">
       <header className="topbar">
         <Link className="brand" href="/" aria-label="PriceTrail home">
           <LogoMark />
           <span>PriceTrail</span>
         </Link>
         <div className="top-actions">
-          <AuthButton session={session} />
+          <AuthButton session={viewer.session} />
           <ThemeToggle />
         </div>
       </header>
@@ -61,7 +61,7 @@ export default async function ProductPage({ params }: Props) {
       <Link className="back-link" href="/" aria-label="Back to watchlist"><Icon name="arrow" size={16} /> Back to watchlist</Link>
       <section className="panel product-hero">
         <div className="product-hero-card">
-          <ProductImage src={product.imageUrl} alt={product.title} />
+          <ProductImage src={product.imageUrl} alt={product.title} priority />
           <div>
             <div className="detail-kicker"><span className="status-dot" /> Watching price</div>
             <h1 className="product-hero-title">{product.title}</h1>

@@ -3,7 +3,7 @@ import { LogoMark } from "@/components/Icons";
 
 export default function ProductLoading() {
   return (
-    <main className="shell">
+    <main className="shell" id="main-content">
       <header className="topbar">
         <Link className="brand" href="/">
           <LogoMark />

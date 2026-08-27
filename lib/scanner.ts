@@ -145,7 +145,11 @@ export async function scanDueProducts(limit = 20) {
   const now = new Date();
   const products = await db
     .collection<ProductDocument>("products")
-    .find({ active: true, nextScanAt: { $lte: now } })
+    .find({
+      active: true,
+      nextScanAt: { $lte: now },
+      userId: { $exists: true, $nin: ["", "guest"] }
+    })
     .sort({ nextScanAt: 1 })
     .limit(limit)
     .toArray();

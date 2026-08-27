@@ -16,7 +16,7 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
     if (!url.trim()) return;
 
     setStatus("loading");
-    setMessage("Reading product price...");
+    setMessage("Reading product price…");
 
     try {
       const response = await fetch("/api/products", {
@@ -34,7 +34,7 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
 
       const productPath = `/products/${payload.product._id}`;
       setStatus("navigating");
-      setMessage("Added. Opening price history...");
+      setMessage("Added. Opening price history…");
       setUrl("");
       router.prefetch(productPath);
       router.push(productPath);
@@ -75,11 +75,13 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
           <input
             id="product-url"
             className="search-input"
+            name="url"
             value={url}
             onChange={(event) => setUrl(event.target.value)}
-            placeholder="Paste any product URL"
+            placeholder="https://store.com/product…"
             type="url"
             inputMode="url"
+            autoComplete="url"
             aria-label="Product URL"
             disabled={busy}
             required
@@ -100,10 +102,10 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
           <span>{status === "navigating" ? "Opening" : status === "loading" ? "Scanning" : "Track price"}</span>
         </button>
       </form>
-      <div className="form-note"><Icon name={signedIn ? "lock" : "globe"} size={14} /> {status === "idle" ? signedIn ? "Private watchlist" : "Guest demo · sign in to sync" : "Scanning..."}</div>
+      <div className="form-note"><Icon name={signedIn ? "lock" : "globe"} size={14} /> {status === "idle" ? signedIn ? "Saved to your watchlist" : "Saved in this browser" : "Scanning…"}</div>
       <div className={`status-slot ${message ? "has-message" : ""}`}>
         {message ? (
-          <div className={`status-banner ${status}`} role={status === "error" ? "alert" : "status"}>
+          <div className={`status-banner ${status}`} role={status === "error" ? "alert" : "status"} aria-live={status === "error" ? "assertive" : "polite"} aria-atomic="true">
             {busy ? <span className="pulse-dot" aria-hidden="true" /> : null}
             <span>{message}</span>
           </div>
