@@ -31,6 +31,7 @@ export default async function Home() {
           <ThemeToggle />
         </div>
       </header>
+      {viewer.claimedCount ? <p className="account-notice" role="status">Watchlist saved to your account.</p> : null}
 
       <section className="hero hero-grid">
         <div className="hero-copy-block">
