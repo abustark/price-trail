@@ -4,11 +4,17 @@ import { scanDueProducts } from "@/lib/scanner";
 
 export async function GET(request: Request) {
   const configuredSecret = process.env.CRON_SECRET;
-  const token = new URL(request.url).searchParams.get("token") || request.headers.get("x-cron-secret");
-  const userAgent = request.headers.get("user-agent") || "";
+  const authHeader = request.headers.get("authorization");
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const token =
+    new URL(request.url).searchParams.get("token") ||
+    request.headers.get("x-cron-secret") ||
+    bearerToken;
 
-  if (configuredSecret && token !== configuredSecret && userAgent !== "vercel-cron/1.0") {
-    return NextResponse.json({ error: "Unauthorized cron request." }, { status: 401 });
+  if (process.env.NODE_ENV === "production" || configuredSecret) {
+    if (!configuredSecret || token !== configuredSecret) {
+      return NextResponse.json({ error: "Unauthorized cron request." }, { status: 401 });
+    }
   }
 
   await ensureIndexes();

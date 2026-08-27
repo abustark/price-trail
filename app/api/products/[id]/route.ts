@@ -15,13 +15,14 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Invalid product id." }, { status: 400 });
   }
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
-  }
+  const userId = session?.user?.id || "guest";
 
   const db = await getDb();
   const productId = new ObjectId(id);
-  const product = await db.collection<ProductDocument>("products").findOne({ _id: productId, userId: session.user.id });
+  const product = await db.collection<ProductDocument>("products").findOne({
+    _id: productId,
+    $or: [{ userId }, { userId: "guest" }, { userId: { $exists: false } }]
+  });
 
   if (!product) {
     return NextResponse.json({ error: "Product not found." }, { status: 404 });
@@ -44,6 +45,6 @@ export async function GET(_request: Request, { params }: Params) {
       _id: sample._id?.toString(),
       productId: sample.productId.toString()
     })),
-    stats: calculatePriceStats(samples)
+    stats: calculatePriceStats(samples, product.mrp)
   });
 }

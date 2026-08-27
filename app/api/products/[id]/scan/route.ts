@@ -15,18 +15,19 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Invalid product id." }, { status: 400 });
   }
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
-  }
+  const userId = session?.user?.id || "guest";
 
   const db = await getDb();
-  const product = await db.collection<ProductDocument>("products").findOne({ _id: new ObjectId(id), userId: session.user.id });
+  const product = await db.collection<ProductDocument>("products").findOne({
+    _id: new ObjectId(id),
+    $or: [{ userId }, { userId: "guest" }, { userId: { $exists: false } }]
+  });
   if (!product) {
     return NextResponse.json({ error: "Product not found." }, { status: 404 });
   }
 
   try {
-    const updated = await scanAndSaveProduct(product.normalizedUrl, session.user.id);
+    const updated = await scanAndSaveProduct(product.normalizedUrl, userId);
     return NextResponse.json({ product: { ...updated, _id: updated._id?.toString() } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Scan failed.";

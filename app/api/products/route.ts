@@ -11,15 +11,15 @@ const TrackSchema = z.object({
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ products: [] });
-  }
+  const userId = session?.user?.id || "guest";
 
   await ensureIndexes();
   const db = await getDb();
   const products = await db
     .collection<ProductDocument>("products")
-    .find({ userId: session.user.id })
+    .find({
+      $or: [{ userId }, { userId: "guest" }, { userId: { $exists: false } }]
+    })
     .sort({ updatedAt: -1 })
     .limit(50)
     .toArray();
@@ -35,13 +35,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Sign in with Google to save tracked products across devices." }, { status: 401 });
-    }
+    const userId = session?.user?.id || "guest";
 
     await ensureIndexes();
     const body = TrackSchema.parse(await request.json());
-    const product = await scanAndSaveProduct(body.url, session.user.id);
+    const product = await scanAndSaveProduct(body.url, userId);
 
     return NextResponse.json({
       product: {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getDb } from "@/lib/db";
 import type { ProductDocument } from "@/lib/types";
 import { TrackForm } from "@/components/TrackForm";
@@ -5,87 +6,106 @@ import { ProductList } from "@/components/ProductList";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AuthButton } from "@/components/AuthButton";
+import { Icon, LogoMark } from "@/components/Icons";
 import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const products = await loadProducts();
   const session = await auth();
+  const products = await loadProducts(session?.user?.id);
   const activeCount = products.filter((product) => product.active).length;
-  const storeCount = new Set(products.map((product) => product.store)).size;
-  const lastScan = products
-    .filter((product) => product.lastScannedAt)
-    .sort((a, b) => Number(b.lastScannedAt) - Number(a.lastScannedAt))[0]?.lastScannedAt;
+  const storeCount = new Set(products.map((product) => product.storeLabel || product.store)).size;
+  const signedIn = Boolean(session?.user);
 
   return (
-    <main className="shell">
+    <main className="shell home-shell" id="top">
       <header className="topbar">
-        <a className="brand" href="/">
-          <span className="mark">PT</span>
+        <Link className="brand" href="/" aria-label="PriceTrail home">
+          <LogoMark />
           <span>PriceTrail</span>
-        </a>
+        </Link>
+        <nav className="main-nav" aria-label="Main navigation">
+          <a href="#watchlist">Watchlist</a>
+          <a href="#how-it-works">How it works</a>
+        </nav>
         <div className="top-actions">
-          <span className="support-line">Amazon · Flipkart · Myntra · Ajio</span>
-          <AuthButton />
+          <AuthButton session={session} />
           <ThemeToggle />
         </div>
       </header>
 
-      <section className="hero compact-hero">
-        <p className="eyebrow">Amazon, Flipkart, Myntra and Ajio price history</p>
-        <h1>Paste a product link. Know the real price pattern.</h1>
-        <p className="hero-copy">
-          {session?.user
-            ? "Your tracked links are saved to your Google account and available across devices."
-            : "Sign in with Google to save tracked links across devices."}
-        </p>
-        <TrackForm />
-      </section>
+      <section className="hero hero-grid">
+        <div className="hero-copy-block">
+          <div className="hero-kicker"><span className="kicker-dot" /> Price tracking for every store</div>
+          <h1>Track a price. <em>Buy at the right moment.</em></h1>
+          <p className="hero-copy">Paste a product link. We&apos;ll record its price over time.</p>
+        </div>
 
-      <section className="grid" aria-label="Tracker summary">
-        <div className="stat">
-          <span>Tracked products</span>
-          <strong>{products.length}</strong>
-        </div>
-        <div className="stat">
-          <span>Active scans</span>
-          <strong>{activeCount}</strong>
-        </div>
-        <div className="stat">
-          <span>Stores covered</span>
-          <strong>{storeCount}</strong>
-        </div>
-        <div className="stat">
-          <span>Last scan</span>
-          <strong>{lastScan ? formatDate(lastScan) : "None"}</strong>
-        </div>
-      </section>
-
-      <section className="panel product-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Monitoring</p>
-            <h2>Tracked products</h2>
+        <div className="hero-tracker-card">
+          <div className="tracker-card-heading">
+            <div className="tracker-card-icon"><Icon name="spark" size={19} /></div>
+            <div>
+              <p className="eyebrow">Price tracker</p>
+              <h2>Paste a product link</h2>
+              <p className="tracker-card-description">Start with any public product page.</p>
+            </div>
           </div>
-          <span className="muted">{products.length} total</span>
+          <TrackForm signedIn={signedIn} />
+          <div className="tracker-card-foot"><Icon name="globe" size={15} /> Amazon, Flipkart, Myntra, AJIO + more</div>
         </div>
-        <ProductList products={products.map((product) => serializeProduct(product))} />
       </section>
+
+      <section className="proof-strip" aria-label="PriceTrail benefits">
+        <div className="proof-item"><span className="proof-icon teal"><Icon name="globe" size={17} /></span><strong>Any public store</strong></div>
+        <div className="proof-item"><span className="proof-icon amber"><Icon name="trend" size={17} /></span><strong>Price history</strong></div>
+        <div className="proof-item"><span className="proof-icon violet"><Icon name="clock" size={17} /></span><strong>Scheduled checks</strong></div>
+      </section>
+
+      <section className="stats-row" aria-label="Tracker summary">
+        <div className="stat stat-featured"><span>Tracked products</span><strong>{products.length}</strong></div>
+        <div className="stat"><span>Active watches</span><strong>{activeCount}</strong></div>
+        <div className="stat"><span>Stores covered</span><strong>{storeCount}</strong></div>
+      </section>
+
+      <section className="watchlist-section" id="watchlist">
+        <div className="section-heading section-heading-wide">
+          <div>
+            <div className="section-label"><span className="section-label-line" /> Watchlist</div>
+            <h2>Products you&apos;re tracking.</h2>
+          </div>
+          <span className="list-count">{signedIn ? `${products.length} ${products.length === 1 ? "item" : "items"}` : `${products.length} demo ${products.length === 1 ? "item" : "items"}`}</span>
+        </div>
+        <ProductList products={products.map((product) => serializeProduct(product))} signedIn={signedIn} />
+      </section>
+
+      <section className="how-section" id="how-it-works">
+        <div className="how-intro">
+          <div className="section-label"><span className="section-label-line" /> How it works</div>
+          <h2>Link in.<br /><span>Price out.</span></h2>
+          <p>One link starts the history. Check back when you&apos;re ready to buy.</p>
+        </div>
+        <div className="steps-grid">
+          <div className="step-card"><span className="step-number">01</span><span className="step-icon"><Icon name="link" size={20} /></span><h3>Paste link</h3><p>Add any public product URL.</p></div>
+          <div className="step-card"><span className="step-number">02</span><span className="step-icon"><Icon name="zap" size={20} /></span><h3>Capture price</h3><p>We save the current price.</p></div>
+          <div className="step-card"><span className="step-number">03</span><span className="step-icon"><Icon name="trend" size={20} /></span><h3>Watch changes</h3><p>See the range over time.</p></div>
+        </div>
+      </section>
+
       <SiteFooter />
     </main>
   );
 }
 
-async function loadProducts(): Promise<ProductDocument[]> {
+async function loadProducts(userId?: string): Promise<ProductDocument[]> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) return [];
-
     const db = await getDb();
+    const targetUser = userId || "guest";
     return await db
       .collection<ProductDocument>("products")
-      .find({ userId: session.user.id })
+      .find({
+        $or: [{ userId: targetUser }, { userId: "guest" }, { userId: { $exists: false } }]
+      })
       .sort({ updatedAt: -1 })
       .limit(50)
       .toArray();
@@ -103,8 +123,4 @@ function serializeProduct(product: ProductDocument) {
     nextScanAt: product.nextScanAt.toISOString(),
     lastScannedAt: product.lastScannedAt?.toISOString()
   };
-}
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short" }).format(date);
 }
