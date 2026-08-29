@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getViewer } from "@/lib/viewer";
 import { getDb } from "@/lib/db";
 import type { PriceSampleDocument, ProductDocument } from "@/lib/types";
 
@@ -13,14 +13,17 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (!ObjectId.isValid(id)) {
     return NextResponse.json({ error: "Invalid product id." }, { status: 400 });
   }
-  const session = await auth();
-  if (!session?.user?.id) {
+  const viewer = await getViewer();
+  if (!viewer.userId) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
   const db = await getDb();
   const productId = new ObjectId(id);
-  const product = await db.collection<ProductDocument>("products").findOne({ _id: productId, userId: session.user.id });
+  const product = await db.collection<ProductDocument>("products").findOne({
+    _id: productId,
+    userId: viewer.userId
+  });
   if (!product) {
     return NextResponse.json({ error: "Product not found." }, { status: 404 });
   }

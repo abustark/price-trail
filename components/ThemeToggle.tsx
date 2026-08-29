@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Icon } from "@/components/Icons";
 
 type Theme = "light" | "dark";
 
@@ -19,6 +20,8 @@ export function ThemeToggle() {
     setTheme(next);
   }
 
+  const nextTheme = theme === "dark" ? "light" : "dark";
+
   return (
     <button
       className="theme-switch"
@@ -26,14 +29,11 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       role="switch"
       aria-checked={theme === "dark"}
-      aria-label="Toggle light and dark mode"
-      title="Toggle theme"
+      aria-label={`Switch to ${nextTheme} mode`}
+      title={`Switch to ${nextTheme} mode`}
     >
-      <span className="switch-label">Light</span>
-      <span className="switch-track" aria-hidden="true">
-        <span className="switch-thumb" />
-      </span>
-      <span className="switch-label">Dark</span>
+      <span className="theme-icon" aria-hidden="true"><Icon name={theme === "dark" ? "sun" : "moon"} size={17} /></span>
+      <span className="theme-text">{theme === "dark" ? "Dark" : "Light"}</span>
     </button>
   );
 }

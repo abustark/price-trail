@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getDb } from "@/lib/db";
 import type { ProductDocument } from "@/lib/types";
 import { TrackForm } from "@/components/TrackForm";
@@ -5,87 +6,77 @@ import { ProductList } from "@/components/ProductList";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AuthButton } from "@/components/AuthButton";
-import { auth } from "@/auth";
+import { Icon, LogoMark } from "@/components/Icons";
+import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const products = await loadProducts();
-  const session = await auth();
-  const activeCount = products.filter((product) => product.active).length;
-  const storeCount = new Set(products.map((product) => product.store)).size;
-  const lastScan = products
-    .filter((product) => product.lastScannedAt)
-    .sort((a, b) => Number(b.lastScannedAt) - Number(a.lastScannedAt))[0]?.lastScannedAt;
+  const viewer = await getViewer();
+  const products = await loadProducts(viewer.userId);
+  const signedIn = viewer.signedIn;
 
   return (
-    <main className="shell">
+    <main className="shell home-shell" id="main-content">
       <header className="topbar">
-        <a className="brand" href="/">
-          <span className="mark">PT</span>
+        <Link className="brand" href="/" aria-label="PriceTrail home">
+          <LogoMark />
           <span>PriceTrail</span>
-        </a>
+        </Link>
+        <nav className="main-nav" aria-label="Main navigation">
+          <a href="#watchlist">Watchlist</a>
+        </nav>
         <div className="top-actions">
-          <span className="support-line">Amazon · Flipkart · Myntra · Ajio</span>
-          <AuthButton />
+          <AuthButton session={viewer.session} />
           <ThemeToggle />
         </div>
       </header>
+      {viewer.claimedCount ? <p className="account-notice" role="status">Watchlist saved to your account.</p> : null}
 
-      <section className="hero compact-hero">
-        <p className="eyebrow">Amazon, Flipkart, Myntra and Ajio price history</p>
-        <h1>Paste a product link. Know the real price pattern.</h1>
-        <p className="hero-copy">
-          {session?.user
-            ? "Your tracked links are saved to your Google account and available across devices."
-            : "Sign in with Google to save tracked links across devices."}
-        </p>
-        <TrackForm />
-      </section>
+      <section className="hero hero-grid">
+        <div className="hero-copy-block">
+          <div className="hero-kicker"><span className="kicker-dot" /> Price history for online shopping</div>
+          <h1>Track prices <em>before you buy.</em></h1>
+          <p className="hero-copy">Paste a product link to see its price history.</p>
+        </div>
 
-      <section className="grid" aria-label="Tracker summary">
-        <div className="stat">
-          <span>Tracked products</span>
-          <strong>{products.length}</strong>
-        </div>
-        <div className="stat">
-          <span>Active scans</span>
-          <strong>{activeCount}</strong>
-        </div>
-        <div className="stat">
-          <span>Stores covered</span>
-          <strong>{storeCount}</strong>
-        </div>
-        <div className="stat">
-          <span>Last scan</span>
-          <strong>{lastScan ? formatDate(lastScan) : "None"}</strong>
-        </div>
-      </section>
-
-      <section className="panel product-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Monitoring</p>
-            <h2>Tracked products</h2>
+        <div className="hero-tracker-card">
+          <div className="tracker-card-heading">
+            <div className="tracker-card-icon"><Icon name="spark" size={19} /></div>
+            <div>
+              <p className="eyebrow">Add a product</p>
+              <h2>Paste a product link</h2>
+              <p className="tracker-card-description">Start with any public product page.</p>
+            </div>
           </div>
-          <span className="muted">{products.length} total</span>
+          <TrackForm signedIn={signedIn} />
+          <div className="tracker-card-foot"><Icon name="globe" size={15} /> Amazon · Flipkart · AJIO · more</div>
         </div>
-        <ProductList products={products.map((product) => serializeProduct(product))} />
       </section>
+
+      <section className="watchlist-section" id="watchlist">
+        <div className="section-heading section-heading-wide">
+          <div>
+            <div className="section-label"><span className="section-label-line" /> Watchlist</div>
+            <h2>Products you&apos;re tracking.</h2>
+          </div>
+          <span className="list-count">{products.length} {products.length === 1 ? "item" : "items"}</span>
+        </div>
+        <ProductList products={products.map((product) => serializeProduct(product))} signedIn={signedIn} />
+      </section>
+
       <SiteFooter />
     </main>
   );
 }
 
-async function loadProducts(): Promise<ProductDocument[]> {
+async function loadProducts(userId?: string): Promise<ProductDocument[]> {
+  if (!userId) return [];
   try {
-    const session = await auth();
-    if (!session?.user?.id) return [];
-
     const db = await getDb();
     return await db
       .collection<ProductDocument>("products")
-      .find({ userId: session.user.id })
+      .find({ userId })
       .sort({ updatedAt: -1 })
       .limit(50)
       .toArray();
@@ -103,8 +94,4 @@ function serializeProduct(product: ProductDocument) {
     nextScanAt: product.nextScanAt.toISOString(),
     lastScannedAt: product.lastScannedAt?.toISOString()
   };
-}
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short" }).format(date);
 }

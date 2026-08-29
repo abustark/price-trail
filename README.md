@@ -1,14 +1,17 @@
 # PriceTrail
 
-PriceTrail is a Vercel-ready ecommerce price tracker for Amazon India, Flipkart, Myntra and Ajio links.
+PriceTrail is a Vercel-ready ecommerce price tracker with a fast, focused watchlist UI. It has dedicated extraction paths for Amazon India, Flipkart, Myntra and AJIO, plus a generic structured-data adapter for product pages across the wider web.
 
-It records price snapshots over time and reports:
+Paste one product URL to record price snapshots over time and report:
 
 - highest tracked price and date
 - lowest tracked price and date
 - most common tracked price
 - how many times the price changed
 - average change frequency once enough history exists
+- current price, stock state and scan source for recent observations
+
+The generic adapter first looks for schema.org Product/Offer JSON-LD, then Open Graph price metadata, then common `data-price`, `data-testid` and commerce JSON fields. Dedicated store adapters can be added without changing the watchlist or analytics UI.
 
 ## Tech Stack
 
@@ -32,12 +35,12 @@ MONGODB_URI=mongodb+srv://USER:PASSWORD@cluster.mongodb.net/price_tracker?retryW
 MONGODB_DB=price_tracker
 CRON_SECRET=replace-with-a-long-random-secret
 AUTH_SECRET=replace-with-a-long-random-auth-secret
-AUTH_URL=http://localhost:3000
+AUTH_URL=http://localhost:3010
 GOOGLE_CLIENT_ID=your-google-oauth-client-id
 GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
 ```
 
-Open `http://localhost:3000`, paste a product URL, and the app will scan and save the first price sample.
+Open `http://localhost:3010`, paste a product URL, and the app will scan and save the first price sample. Signed-out visitors keep a private watchlist in their browser; sign in with Google before tracking if you need access across devices.
 
 ## Google Sign In
 
@@ -46,7 +49,7 @@ PriceTrail uses Auth.js/NextAuth Google OAuth so tracked product links are saved
 Create OAuth credentials in Google Cloud Console and add this redirect URI:
 
 ```text
-http://localhost:3000/api/auth/callback/google
+http://localhost:3010/api/auth/callback/google
 ```
 
 For Vercel production, also add:

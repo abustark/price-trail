@@ -1,46 +1,57 @@
 import Link from "next/link";
+import { getStoreLabel } from "@/lib/stores";
+import type { StoreKey } from "@/lib/types";
+import { Icon } from "@/components/Icons";
+import { ProductImage } from "@/components/ProductImage";
 
 type ProductListItem = {
   _id?: string;
   title: string;
-  store: string;
+  store: StoreKey;
+  storeLabel?: string;
+  normalizedUrl?: string;
   imageUrl?: string;
   currency: string;
   lastPrice?: number;
   lastScannedAt?: string;
   lastError?: string;
+  active?: boolean;
 };
 
-export function ProductList({ products }: { products: ProductListItem[] }) {
+export function ProductList({ products, signedIn = true }: { products: ProductListItem[]; signedIn?: boolean }) {
   if (products.length === 0) {
     return (
       <div className="empty-state">
-        <p>Sign in, then paste a product link above to start your saved price history.</p>
+        <div className="empty-icon"><Icon name={signedIn ? "spark" : "lock"} size={21} /></div>
+        <strong>Start your watchlist.</strong>
+        <p>Paste a link above to start tracking.</p>
+        <a className="text-link" href="#main-content">Add a product ↑</a>
       </div>
     );
   }
 
   return (
     <div className="product-list">
-      {products.map((product) => (
-        <Link className="product-card" href={`/products/${product._id}`} key={product._id}>
-          {product.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="product-image" src={product.imageUrl} alt="" />
-          ) : (
-            <span className="product-image" />
-          )}
-          <div>
-            <div className="product-title">{product.title}</div>
-            <div className="product-meta">
-              <span className="meta-chip">{product.store}</span>
-              <span className="meta-chip">{product.lastScannedAt ? formatDate(product.lastScannedAt) : "Not scanned"}</span>
-              {product.lastError ? <span className="meta-chip error">Last scan failed</span> : null}
+      {products.map((product) => {
+        const storeLabel = getStoreLabel(product.store, product.normalizedUrl, product.storeLabel);
+        return (
+          <Link className="product-card" href={`/products/${product._id}`} key={product._id}>
+            <ProductImage src={product.imageUrl} alt={product.title} />
+            <div className="product-card-main">
+              <div className="product-title">{product.title}</div>
+              <div className="product-meta">
+                <span className="store-chip"><span className={`store-dot ${product.store}`} />{storeLabel}</span>
+                <span className="scan-status"><span className={product.lastError ? "status-dot error-dot" : "status-dot"} />{product.lastError ? "Needs attention" : product.active === false ? "Paused" : product.lastScannedAt ? formatRelativeDate(product.lastScannedAt) : "Waiting"}</span>
+              </div>
             </div>
-          </div>
-          <div className="price">{product.lastPrice ? formatMoney(product.lastPrice, product.currency) : "No price"}</div>
-        </Link>
-      ))}
+            <div className="product-card-price">
+              <span>Current price</span>
+              <strong>{product.lastPrice != null ? formatMoney(product.lastPrice, product.currency) : "-"}</strong>
+            </div>
+            <Icon name="arrow" size={18} />
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -53,11 +64,13 @@ function formatMoney(value: number, currency: string) {
   }).format(value);
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(new Date(value));
+function formatRelativeDate(value: string) {
+  const elapsed = Math.max(0, Date.now() - new Date(value).getTime());
+  const minutes = Math.floor(elapsed / 60000);
+  if (minutes < 2) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }

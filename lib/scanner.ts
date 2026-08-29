@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
-import { assertAllowedProductUrl, canonicalizeStoreUrl, detectStore, resolveSupportedProductUrl } from "@/lib/stores";
+import { queueHistoricalBackfill } from "@/lib/history";
+import { assertAllowedProductUrl, canonicalizeStoreUrl, detectStore, getStoreLabel, resolveSupportedProductUrl } from "@/lib/stores";
 import type { PriceSampleDocument, ProductDocument, ScanResult, StoreKey } from "@/lib/types";
 
 const USER_AGENT =
@@ -11,6 +12,8 @@ const MAX_ATTEMPTS = 3;
 type ParsedProduct = {
   title: string;
   price?: number;
+  mrp?: number;
+  discountPercent?: number;
   currency: string;
   imageUrl?: string;
   inStock?: boolean;
@@ -33,7 +36,13 @@ export async function fetchProductSnapshot(url: string): Promise<ScanResult> {
     const direct = await fetchHtml(canonicalUrl, store, "direct");
     const parsed = parseProductHtml(direct.html, store);
     if (parsed.price) {
-      return { ...parsed, price: parsed.price, source: direct.source };
+      return {
+        ...parsed,
+        price: parsed.price,
+        mrp: parsed.mrp,
+        discountPercent: parsed.discountPercent,
+        source: direct.source
+      };
     }
   } catch (error) {
     directError = error;
@@ -44,7 +53,13 @@ export async function fetchProductSnapshot(url: string): Promise<ScanResult> {
       const proxy = await fetchHtml(canonicalUrl, store, "proxy");
       const proxyParsed = parseProductHtml(proxy.html, store);
       if (proxyParsed.price) {
-        return { ...proxyParsed, price: proxyParsed.price, source: proxy.source };
+        return {
+          ...proxyParsed,
+          price: proxyParsed.price,
+          mrp: proxyParsed.mrp,
+          discountPercent: proxyParsed.discountPercent,
+          source: proxy.source
+        };
       }
     } catch {
     }
@@ -69,6 +84,7 @@ export async function scanAndSaveProduct(inputUrl: string, userId?: string): Pro
     normalizedUrl: canonicalUrl,
     userId,
     store,
+    storeLabel: getStoreLabel(store, canonicalUrl, existing?.storeLabel),
     title: snapshot.title,
     imageUrl: snapshot.imageUrl,
     currency: snapshot.currency,
@@ -77,6 +93,8 @@ export async function scanAndSaveProduct(inputUrl: string, userId?: string): Pro
     nextScanAt: new Date(now.getTime() + (existing?.scanEveryHours || 6) * 60 * 60 * 1000),
     lastScannedAt: now,
     lastPrice: snapshot.price,
+    mrp: snapshot.mrp || existing?.mrp,
+    discountPercent: snapshot.discountPercent || existing?.discountPercent,
     updatedAt: now
   };
 
@@ -84,6 +102,7 @@ export async function scanAndSaveProduct(inputUrl: string, userId?: string): Pro
     { _id: productId },
     {
       $set: productUpdate,
+      $unset: { lastError: "" },
       $setOnInsert: {
         _id: productId,
         createdAt: now
@@ -102,6 +121,18 @@ export async function scanAndSaveProduct(inputUrl: string, userId?: string): Pro
     createdAt: now
   });
 
+  // If this product was tracked for the first time and hasn't been backfilled, queue historical backfill
+  if (!existing || !existing.historyBackfilled) {
+    queueHistoricalBackfill({
+      productId,
+      canonicalUrl,
+      store,
+      currentPrice: snapshot.price,
+      mrp: snapshot.mrp,
+      currency: snapshot.currency
+    });
+  }
+
   return {
     _id: productId,
     createdAt: existing?.createdAt || now,
@@ -114,7 +145,11 @@ export async function scanDueProducts(limit = 20) {
   const now = new Date();
   const products = await db
     .collection<ProductDocument>("products")
-    .find({ active: true, nextScanAt: { $lte: now } })
+    .find({
+      active: true,
+      nextScanAt: { $lte: now },
+      userId: { $exists: true, $nin: ["", "guest"] }
+    })
     .sort({ nextScanAt: 1 })
     .limit(limit)
     .toArray();
@@ -151,6 +186,7 @@ async function fetchHtml(
   const proxyConfig = getProxyConfig();
   let target = mode === "proxy" ? buildProxyUrl(url, proxyConfig) : url;
   let lastError: unknown;
+  let redirects = 0;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {
@@ -164,6 +200,8 @@ async function fetchHtml(
       });
 
       if (mode === "direct" && isRedirect(response.status)) {
+        redirects += 1;
+        if (redirects > 5) throw new Error("The store returned too many redirects.");
         target = followSafeRedirect(target, response, store);
         continue;
       }
@@ -271,7 +309,11 @@ function followSafeRedirect(currentUrl: string, response: Response, store: Store
 }
 
 function looksBlocked(html: string): boolean {
-  return /captcha|robot check|access denied|request blocked|unusual traffic|are you a human/i.test(html);
+  // Real blocked / challenge pages are tiny (< 50KB) and have captcha in the <title> or <h1>
+  if (html.length > 50000) return false;
+  const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "").toLowerCase();
+  return /robot check|captcha|access denied|request blocked|unusual traffic|are you a human/i.test(title) ||
+    /<h1>\s*(?:access denied|blocked|captcha)\s*<\/h1>/i.test(html);
 }
 
 function isRetryableFetchError(error: unknown): boolean {
@@ -331,12 +373,19 @@ function parseProductHtml(html: string, store: StoreKey): ParsedProduct {
   const meta = parseMeta(html);
   const title = cleanText(jsonLd.title || meta.title || extractTitle(html) || "Tracked product");
   const price = jsonLd.price || meta.price || parseStoreSpecificPrice(html, store) || parseVisiblePrice(html);
-  const currency = jsonLd.currency || meta.currency || "INR";
+  const mrp = jsonLd.mrp || parseStoreSpecificMrp(html, store);
+  const currency = normalizeCurrency(jsonLd.currency || meta.currency || "INR");
   const imageUrl = jsonLd.imageUrl || meta.imageUrl;
+
+  const discountPercent = mrp && price && mrp > price
+    ? Math.round(((mrp - price) / mrp) * 100)
+    : undefined;
 
   return {
     title,
     price,
+    mrp: mrp && price && mrp > price ? mrp : undefined,
+    discountPercent,
     currency,
     imageUrl,
     inStock: !/out of stock|currently unavailable|sold out/i.test(html)
@@ -355,10 +404,12 @@ function parseJsonLd(html: string) {
 
       const offer = Array.isArray(item.offers) ? item.offers[0] : item.offers;
       const price = toPrice(offer?.price || offer?.lowPrice || item.price);
+      const mrp = toPrice(offer?.highPrice || item?.highPrice || (offer?.price && offer?.lowPrice && offer.price > offer.lowPrice ? offer.price : undefined));
       if (price) {
         return {
           title: item.name,
           price,
+          mrp,
           currency: offer?.priceCurrency || item.priceCurrency || "INR",
           imageUrl: Array.isArray(item.image) ? item.image[0] : item.image
         };
@@ -370,12 +421,17 @@ function parseJsonLd(html: string) {
 }
 
 function parseMeta(html: string) {
-  const meta = (name: string) => {
-    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const match = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${escaped}["'][^>]+content=["']([^"']+)["'][^>]*>`, "i"));
-    return match ? decodeHtml(match[1]) : undefined;
-  };
+  const values = new Map<string, string>();
+  const tags = html.matchAll(/<meta\b[^>]*>/gi);
 
+  for (const match of tags) {
+    const tag = match[0];
+    const key = readAttribute(tag, "property") || readAttribute(tag, "name");
+    const content = readAttribute(tag, "content");
+    if (key && content) values.set(key.toLowerCase(), decodeHtml(content));
+  }
+
+  const meta = (name: string) => values.get(name.toLowerCase());
   return {
     title: meta("og:title"),
     price: toPrice(meta("product:price:amount") || meta("og:price:amount")),
@@ -384,16 +440,24 @@ function parseMeta(html: string) {
   };
 }
 
+function readAttribute(tag: string, attribute: string): string | undefined {
+  const match = tag.match(new RegExp(`${attribute}\\s*=\\s*["']([^"']+)["']`, "i"));
+  return match?.[1];
+}
+
 function parseStoreSpecificPrice(html: string, store: StoreKey): number | undefined {
   const decoded = decodeHtml(html);
   const candidates: Array<number | undefined> = [];
 
   if (store === "flipkart") {
     candidates.push(
-      parseFirst(decoded, /class=["'][^"']*(?:_30jeq3|Nx9bqj|CxhGGd)[^"']*["'][^>]*>\s*(?:\u20b9|Rs\.?)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
+      parseFirst(decoded, /class=["'][^"']*(?:_30jeq3|Nx9bqj|CxhGGd|hl05eU|_16Jk6d|yRaY8j)[^"']*["'][^>]*>\s*(?:\u20b9|Rs\.?)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
       parseFirst(decoded, /"finalPrice"\s*:\s*\{[^{}]*"value"\s*:\s*([0-9,.]+)/i),
       parseFirst(decoded, /"sellingPrice"\s*:\s*\{[^{}]*"value"\s*:\s*([0-9,.]+)/i),
-      parseFirst(decoded, /"discountedPrice"\s*:\s*([0-9,.]+)/i)
+      parseFirst(decoded, /"discountedPrice"\s*:\s*([0-9,.]+)/i),
+      parseFirst(decoded, /"price"\s*:\s*([0-9,.]+)\s*,\s*"discount"/i),
+      parseFirst(decoded, /"displayAmount"\s*:\s*"?\s*(?:\u20b9|Rs\.?)?\s*([0-9,.]+)"?/i),
+      parseFirst(decoded, /"specialPrice"\s*:\s*([0-9,.]+)/i)
     );
   }
 
@@ -421,7 +485,65 @@ function parseStoreSpecificPrice(html: string, store: StoreKey): number | undefi
     );
   }
 
+  // The generic adapter handles stores that expose common ecommerce markup but
+  // do not have a dedicated adapter. JSON-LD and Open Graph are preferred above.
+  if (store === "other") {
+    candidates.push(
+      parseFirst(decoded, /data-testid=["'][^"']*(?:sale|current|selling)?price[^"']*["'][^>]*>\s*(?:[^0-9]{0,8})?([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i),
+      parseFirst(decoded, /(?:data-price|data-sale-price|data-current-price)=["']([0-9,.]+)["']/i),
+      parseFirst(decoded, /class=["'][^"']*(?:sale-price|current-price|selling-price|product-price|price)[^"']*["'][^>]*>\s*(?:[^0-9]{0,8})([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i),
+      parseFirst(decoded, /"(?:salePrice|currentPrice|sellingPrice)"\s*:\s*["']?([0-9,.]+)/i)
+    );
+  }
+
   return candidates.find((price) => price && price > 0);
+}
+
+function parseStoreSpecificMrp(html: string, store: StoreKey): number | undefined {
+  const decoded = decodeHtml(html);
+  const candidates: Array<number | undefined> = [];
+
+  if (store === "flipkart") {
+    candidates.push(
+      parseFirst(decoded, /class=["'][^"']*(?:yRaY8j|_2p6MwQ|cPHDOP)[^"']*["'][^>]*>\s*(?:\u20b9|Rs\.?)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i),
+      parseFirst(decoded, /"mrp"\s*:\s*\{[^{}]*"value"\s*:\s*([0-9,.]+)/i),
+      parseFirst(decoded, /"maximumRetailPrice"\s*:\s*([0-9,.]+)/i),
+      parseFirst(decoded, /"originalPrice"\s*:\s*([0-9,.]+)/i),
+      parseFirst(decoded, /"strikeOffPrice"\s*:\s*([0-9,.]+)/i)
+    );
+  }
+
+  if (store === "amazon") {
+    candidates.push(
+      parseFirst(decoded, /class=["'][^"']*a-text-price[^"']*["'][^>]*>\s*<span[^>]*>(?:\u20b9|Rs\.?)\s*([0-9,]+)/i),
+      parseFirst(decoded, /"basisPrice"\s*:\s*\{[^{}]*"amount"\s*:\s*([0-9,.]+)/i),
+      parseFirst(decoded, /"listPrice"\s*:\s*\{[^{}]*"amount"\s*:\s*([0-9,.]+)/i),
+      parseFirst(decoded, /"recommendedRetailPrice"\s*:\s*([0-9,.]+)/i)
+    );
+  }
+
+  if (store === "myntra") {
+    candidates.push(
+      parseFirst(decoded, /"mrp"\s*:\s*([0-9,.]+)/i),
+      parseFirst(decoded, /class=["'][^"']*pdp-mrp[^"']*["'][^>]*>\s*(?:\u20b9|Rs\.?)\s*([0-9,]+)/i)
+    );
+  }
+
+  if (store === "ajio") {
+    candidates.push(
+      parseFirst(decoded, /"wasPriceData"\s*:\s*\{[^{}]*"value"\s*:\s*([0-9,.]+)/i),
+      parseFirst(decoded, /class=["'][^"']*orginal-price[^"']*["'][^>]*>\s*(?:\u20b9|Rs\.?)\s*([0-9,]+)/i)
+    );
+  }
+
+  if (store === "other") {
+    candidates.push(
+      parseFirst(decoded, /(?:data-mrp|data-original-price|data-list-price)=["']([0-9,.]+)["']/i),
+      parseFirst(decoded, /class=["'][^"']*(?:mrp|original-price|list-price|was-price|regular-price|strike)[^"']*["'][^>]*>\s*(?:[^0-9]{0,8})([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i)
+    );
+  }
+
+  return candidates.find((mrp) => mrp && mrp > 0);
 }
 
 function parseVisiblePrice(html: string): number | undefined {
@@ -468,6 +590,15 @@ function toPrice(value: unknown): number | undefined {
   if (typeof value !== "string" && typeof value !== "number") return undefined;
   const price = Number(String(value).replace(/[^0-9.]/g, ""));
   return Number.isFinite(price) && price > 0 ? price : undefined;
+}
+
+function normalizeCurrency(value: unknown): string {
+  const raw = String(value || "INR").trim().toUpperCase();
+  if (raw === "₹" || raw === "RS" || raw === "RS.") return "INR";
+  if (raw === "$" || raw === "US$") return "USD";
+  if (raw === "£") return "GBP";
+  if (raw === "€") return "EUR";
+  return /^[A-Z]{3}$/.test(raw) ? raw : "INR";
 }
 
 function cleanText(value: string): string {
