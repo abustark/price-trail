@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Icon } from "@/components/Icons";
 
-export function TrackForm() {
+export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "navigating" | "error">("idle");
@@ -16,7 +16,7 @@ export function TrackForm() {
     if (!url.trim()) return;
 
     setStatus("loading");
-    setMessage("Reading the product page and capturing its current price...");
+    setMessage("Reading product price…");
 
     try {
       const response = await fetch("/api/products", {
@@ -34,13 +34,13 @@ export function TrackForm() {
 
       const productPath = `/products/${payload.product._id}`;
       setStatus("navigating");
-      setMessage("Product added. Opening your price timeline...");
+      setMessage("Added. Opening price history…");
       setUrl("");
       router.prefetch(productPath);
       router.push(productPath);
     } catch {
       setStatus("error");
-      setMessage("Network error while scanning. Check your connection and try again.");
+      setMessage("Connection failed. Try again.");
     }
   }
 
@@ -71,13 +71,17 @@ export function TrackForm() {
       <form className="search-form" onSubmit={handleSubmit}>
         <div className="input-wrap">
           <Icon name="link" size={18} />
+          <label className="sr-only" htmlFor="product-url">Product URL</label>
           <input
+            id="product-url"
             className="search-input"
+            name="url"
             value={url}
             onChange={(event) => setUrl(event.target.value)}
-            placeholder="Paste any product URL"
+            placeholder="https://store.com/product…"
             type="url"
             inputMode="url"
+            autoComplete="url"
             aria-label="Product URL"
             disabled={busy}
             required
@@ -98,20 +102,22 @@ export function TrackForm() {
           <span>{status === "navigating" ? "Opening" : status === "loading" ? "Scanning" : "Track price"}</span>
         </button>
       </form>
-      <div className="form-note"><Icon name="lock" size={14} /> {status === "idle" ? "Private watchlist · no spam" : "This can take a few seconds on the first scan"}</div>
-      {message ? (
-        <div className={`status-banner ${status}`} role={status === "error" ? "alert" : "status"}>
-          {busy ? <span className="pulse-dot" aria-hidden="true" /> : null}
-          <span>{message}</span>
-        </div>
-      ) : null}
+      <div className="form-note"><Icon name={signedIn ? "lock" : "globe"} size={14} /> {status === "idle" ? signedIn ? "Saved to your watchlist" : "Saved in this browser" : "Scanning…"}</div>
+      <div className={`status-slot ${message ? "has-message" : ""}`}>
+        {message ? (
+          <div className={`status-banner ${status}`} role={status === "error" ? "alert" : "status"} aria-live={status === "error" ? "assertive" : "polite"} aria-atomic="true">
+            {busy ? <span className="pulse-dot" aria-hidden="true" /> : null}
+            <span>{message}</span>
+          </div>
+        ) : null}
+      </div>
       {status === "navigating" ? (
         <div className="page-transition" role="status" aria-live="polite">
           <div className="transition-card">
             <span className="transition-ring" aria-hidden="true" />
-            <p className="eyebrow">Opening history</p>
-            <strong>Building the price timeline</strong>
-            <span className="muted">Loading product stats, chart and recent scans...</span>
+            <p className="eyebrow">Price history</p>
+            <strong>Loading your timeline</strong>
+            <span className="muted">Almost there.</span>
           </div>
         </div>
       ) : null}

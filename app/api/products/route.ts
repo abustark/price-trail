@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { ensureIndexes, getDb } from "@/lib/db";
 import { scanAndSaveProduct } from "@/lib/scanner";
+import { getOrCreateViewer, getViewer, setGuestCookie } from "@/lib/viewer";
 import type { ProductDocument } from "@/lib/types";
 
 const TrackSchema = z.object({
@@ -10,16 +10,14 @@ const TrackSchema = z.object({
 });
 
 export async function GET() {
-  const session = await auth();
-  const userId = session?.user?.id || "guest";
+  const viewer = await getViewer();
+  if (!viewer.userId) return NextResponse.json({ products: [] });
 
   await ensureIndexes();
   const db = await getDb();
   const products = await db
     .collection<ProductDocument>("products")
-    .find({
-      $or: [{ userId }, { userId: "guest" }, { userId: { $exists: false } }]
-    })
+    .find({ userId: viewer.userId })
     .sort({ updatedAt: -1 })
     .limit(50)
     .toArray();
@@ -34,19 +32,19 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await auth();
-    const userId = session?.user?.id || "guest";
-
-    await ensureIndexes();
+    const viewer = await getOrCreateViewer();
     const body = TrackSchema.parse(await request.json());
-    const product = await scanAndSaveProduct(body.url, userId);
+    await ensureIndexes();
+    const product = await scanAndSaveProduct(body.url, viewer.userId);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       product: {
         ...product,
         _id: product._id?.toString()
       }
     });
+    setGuestCookie(response, viewer.createdGuestId);
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not track product.";
     return NextResponse.json({ error: message }, { status: 400 });

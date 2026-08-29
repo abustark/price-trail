@@ -11,7 +11,7 @@ if "%OPENROUTER_API_KEY%"=="" (
     echo OPENROUTER_API_KEY not found.
     echo.
     echo Paste key once to save for future use.
-    set /p OR_KEY=Paste OPENROUTER_API_KEY: 
+    set /p OR_KEY=Paste OPENROUTER_API_KEY:
     if "!OR_KEY!"=="" (
         echo No key entered.
         pause
@@ -36,7 +36,7 @@ echo 7. Inclusion AI
 echo 8. Llama Nemotron
 echo 9. Kimi K2.6
 echo ===============================
-set /p choice=Enter choice (1-9): 
+set /p choice=Enter choice (1-9):
 
 if "%choice%"=="1" (
     set "MODEL=z-ai/glm-4.5-air:free"

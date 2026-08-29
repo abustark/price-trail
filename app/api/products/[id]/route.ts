@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getViewer } from "@/lib/viewer";
 import { calculatePriceStats } from "@/lib/analytics";
 import { getDb } from "@/lib/db";
 import type { PriceSampleDocument, ProductDocument } from "@/lib/types";
@@ -14,14 +14,16 @@ export async function GET(_request: Request, { params }: Params) {
   if (!ObjectId.isValid(id)) {
     return NextResponse.json({ error: "Invalid product id." }, { status: 400 });
   }
-  const session = await auth();
-  const userId = session?.user?.id || "guest";
+  const viewer = await getViewer();
+  if (!viewer.userId) {
+    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+  }
 
   const db = await getDb();
   const productId = new ObjectId(id);
   const product = await db.collection<ProductDocument>("products").findOne({
     _id: productId,
-    $or: [{ userId }, { userId: "guest" }, { userId: { $exists: false } }]
+    userId: viewer.userId
   });
 
   if (!product) {

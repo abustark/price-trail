@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getStoreLabel } from "@/lib/stores";
 import type { StoreKey } from "@/lib/types";
 import { Icon } from "@/components/Icons";
+import { ProductImage } from "@/components/ProductImage";
 
 type ProductListItem = {
   _id?: string;
@@ -22,9 +23,9 @@ export function ProductList({ products, signedIn = true }: { products: ProductLi
     return (
       <div className="empty-state">
         <div className="empty-icon"><Icon name={signedIn ? "spark" : "lock"} size={21} /></div>
-        <strong>{signedIn ? "Your watchlist is ready." : "Your watchlist is private."}</strong>
-        <p>{signedIn ? "Paste a product link above and we’ll start building its price story." : "Sign in with Google to save products and access your price history anywhere."}</p>
-        <a className="text-link" href="#top">{signedIn ? "Add your first product ↑" : "Sign in above ↑"}</a>
+        <strong>Start your watchlist.</strong>
+        <p>Paste a link above to start tracking.</p>
+        <a className="text-link" href="#main-content">Add a product ↑</a>
       </div>
     );
   }
@@ -35,22 +36,17 @@ export function ProductList({ products, signedIn = true }: { products: ProductLi
         const storeLabel = getStoreLabel(product.store, product.normalizedUrl, product.storeLabel);
         return (
           <Link className="product-card" href={`/products/${product._id}`} key={product._id}>
-            {product.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="product-image" src={product.imageUrl} alt="" loading="lazy" />
-            ) : (
-              <span className="product-image product-image-fallback"><Icon name="spark" size={18} /></span>
-            )}
+            <ProductImage src={product.imageUrl} alt={product.title} />
             <div className="product-card-main">
               <div className="product-title">{product.title}</div>
               <div className="product-meta">
                 <span className="store-chip"><span className={`store-dot ${product.store}`} />{storeLabel}</span>
-                <span className="scan-status"><span className={product.lastError ? "status-dot error-dot" : "status-dot"} />{product.lastError ? "Scan needs attention" : product.active === false ? "Paused" : product.lastScannedAt ? `Updated ${formatRelativeDate(product.lastScannedAt)}` : "Waiting for first scan"}</span>
+                <span className="scan-status"><span className={product.lastError ? "status-dot error-dot" : "status-dot"} />{product.lastError ? "Needs attention" : product.active === false ? "Paused" : product.lastScannedAt ? formatRelativeDate(product.lastScannedAt) : "Waiting"}</span>
               </div>
             </div>
             <div className="product-card-price">
               <span>Current price</span>
-              <strong>{product.lastPrice != null ? formatMoney(product.lastPrice, product.currency) : "—"}</strong>
+              <strong>{product.lastPrice != null ? formatMoney(product.lastPrice, product.currency) : "-"}</strong>
             </div>
             <Icon name="arrow" size={18} />
           </Link>

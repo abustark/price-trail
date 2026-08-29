@@ -5,6 +5,7 @@ import { calculatePriceStats } from "@/lib/analytics";
 import { getDb } from "@/lib/db";
 import type { PriceSampleDocument, ProductDocument } from "@/lib/types";
 import { PriceChart } from "@/components/PriceChart";
+import { ProductImage } from "@/components/ProductImage";
 import { RescanButton } from "@/components/RescanButton";
 import { ResetHistoryButton } from "@/components/ResetHistoryButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -12,7 +13,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Icon, LogoMark } from "@/components/Icons";
 import { getStoreLabel } from "@/lib/stores";
 import { AuthButton } from "@/components/AuthButton";
-import { auth } from "@/auth";
+import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -23,14 +24,14 @@ type Props = {
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
   if (!ObjectId.isValid(id)) notFound();
-  const session = await auth();
-  const userId = session?.user?.id || "guest";
+  const viewer = await getViewer();
+  if (!viewer.userId) notFound();
 
   const db = await getDb();
   const productId = new ObjectId(id);
   const product = await db.collection<ProductDocument>("products").findOne({
     _id: productId,
-    $or: [{ userId }, { userId: "guest" }, { userId: { $exists: false } }]
+    userId: viewer.userId
   });
   if (!product) notFound();
 
@@ -45,16 +46,14 @@ export default async function ProductPage({ params }: Props) {
   const isAtLowest = samples.length > 1 && stats.current?.price === stats.lowest?.price;
 
   return (
-    <main className="shell">
+    <main className="shell" id="main-content">
       <header className="topbar">
         <Link className="brand" href="/" aria-label="PriceTrail home">
           <LogoMark />
           <span>PriceTrail</span>
         </Link>
-        <div className="action-row">
-          <RescanButton productId={id} />
-          <ResetHistoryButton productId={id} />
-          <AuthButton session={session} />
+        <div className="top-actions">
+          <AuthButton session={viewer.session} />
           <ThemeToggle />
         </div>
       </header>
@@ -62,21 +61,16 @@ export default async function ProductPage({ params }: Props) {
       <Link className="back-link" href="/" aria-label="Back to watchlist"><Icon name="arrow" size={16} /> Back to watchlist</Link>
       <section className="panel product-hero">
         <div className="product-hero-card">
-          {product.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="product-image" src={product.imageUrl} alt="" />
-          ) : (
-            <span className="product-image product-image-fallback"><Icon name="spark" size={20} /></span>
-          )}
+          <ProductImage src={product.imageUrl} alt={product.title} priority />
           <div>
-            <div className="detail-kicker"><span className="status-dot" /> Tracking is active</div>
+            <div className="detail-kicker"><span className="status-dot" /> Watching price</div>
             <h1 className="product-hero-title">{product.title}</h1>
             <div className="product-meta">
               <span className="meta-chip">{getStoreLabel(product.store, product.normalizedUrl, product.storeLabel)}</span>
               <a className="meta-chip" href={product.normalizedUrl} target="_blank" rel="noreferrer">
                 Open store page <Icon name="external" size={12} />
               </a>
-              <span className="meta-chip">Every {product.scanEveryHours} hours</span>
+              <span className="meta-chip">Every {product.scanEveryHours}h</span>
               {product.mrp && product.lastPrice && product.mrp > product.lastPrice ? (
                 <span className="meta-chip" style={{ color: "rgb(245, 158, 11)", borderColor: "rgba(245, 158, 11, 0.3)" }}>
                   MRP {formatMoney(product.mrp, product.currency)} • {Math.round(((product.mrp - product.lastPrice) / product.mrp) * 100)}% off
@@ -87,7 +81,7 @@ export default async function ProductPage({ params }: Props) {
           </div>
           <div className="price-block">
             <span>Current price</span>
-            <strong>{product.lastPrice != null ? formatMoney(product.lastPrice, product.currency) : "—"}</strong>
+            <strong>{product.lastPrice != null ? formatMoney(product.lastPrice, product.currency) : "-"}</strong>
             {product.mrp && product.lastPrice && product.mrp > product.lastPrice ? (
               <small style={{ textDecoration: "line-through", color: "var(--muted)", display: "block", marginTop: "2px" }}>
                 MRP: {formatMoney(product.mrp, product.currency)}
@@ -96,18 +90,22 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </div>
         {product.lastError ? <p className="error">Last scan error: {product.lastError}</p> : null}
+        <div className="product-actions" aria-label="Product actions">
+          <RescanButton productId={id} />
+          <ResetHistoryButton productId={id} />
+        </div>
       </section>
 
       <section className="grid stats-grid" aria-label="Price statistics">
         <Stat label="Current price" value={stats.current ? formatMoney(stats.current.price, product.currency) : "None"} note={stats.current ? `as of ${formatDate(stats.current.capturedAt)}` : undefined} />
-        {stats.savings ? (
-          <Stat label="Savings from MRP" value={formatMoney(stats.savings.amount, product.currency)} note={`${stats.savings.percentage}% discount on listed MRP`} />
-        ) : (
-          <Stat label="Lowest price" value={stats.lowest ? formatMoney(stats.lowest.price, product.currency) : "None"} note={stats.lowest ? formatDate(stats.lowest.capturedAt) : undefined} />
-        )}
+        <Stat
+          label="Lowest price"
+          value={stats.lowest ? formatMoney(stats.lowest.price, product.currency) : "None"}
+          note={stats.lowest ? `${formatDate(stats.lowest.capturedAt)}${stats.savings ? ` · ${stats.savings.percentage}% below MRP` : ""}` : undefined}
+        />
         <Stat label="Highest observed" value={stats.highest ? formatMoney(stats.highest.price, product.currency) : "None"} note={stats.highest ? formatDate(stats.highest.capturedAt) : undefined} />
         <Stat label="Typical price" value={stats.common ? formatMoney(stats.common.price, product.currency) : "None"} note={stats.common ? `${stats.common.percentage}% of snapshots` : undefined} />
-        <Stat label="Price changes" value={String(stats.changes.count)} note={stats.changes.description} />
+        <Stat label="Price observations" value={String(stats.sampleCount)} note={`${stats.changes.count} ${stats.changes.count === 1 ? "change" : "changes"} observed`} />
       </section>
 
       <section className="detail-grid">
@@ -124,7 +122,7 @@ export default async function ProductPage({ params }: Props) {
           />
         </div>
         <div className="panel">
-          <div className="panel-heading-row"><div><p className="eyebrow">Latest observations</p><h2>Recent scans</h2></div><span className="list-count">{samples.length} total</span></div>
+          <div className="panel-heading-row"><h2>Recent scans</h2><span className="list-count">{samples.length} total</span></div>
           <div className="samples">
             {[...samples].reverse().slice(0, 12).map((sample) => {
               const isHistorical = sample.source === "historical" || sample.source === "mrp-baseline";
@@ -134,12 +132,12 @@ export default async function ProductPage({ params }: Props) {
                     <span>{formatDate(sample.capturedAt.toISOString())}</span>
                     <small>
                       {sample.source === "mrp-baseline"
-                        ? "MRP Baseline"
+                        ? "MRP baseline"
                         : sample.source === "historical"
-                        ? "Historical import"
+                        ? "Historical"
                         : sample.source === "proxy"
-                        ? "Proxy verified scan"
-                        : "Live verified scan"}
+                        ? "Proxy scan"
+                        : "Live scan"}
                       {sample.inStock === false ? " · Out of stock" : ""}
                     </small>
                   </div>
