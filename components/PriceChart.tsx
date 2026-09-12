@@ -21,23 +21,13 @@ export function PriceChart({
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  if (samples.length === 0) {
-    return (
-      <div className="chart-empty">
-        <span className="empty-icon">
-          <Icon name="trend" size={18} />
-        </span>
-        <p>No price history yet. Scan again to add another observation.</p>
-      </div>
-    );
-  }
-
   const width = 720;
   const height = 300;
   const padding = 34;
 
   const chartSamples = useMemo(() => downsample(samples, 220), [samples]);
   const prices = useMemo(() => {
+    if (chartSamples.length === 0) return [0];
     const list = chartSamples.map((sample) => sample.price);
     if (mrp && mrp > 0) list.push(mrp);
     return list;
@@ -53,6 +43,7 @@ export function PriceChart({
   const range = Math.max(max - min, 1);
 
   const points = useMemo(() => {
+    if (chartSamples.length === 0) return [];
     return chartSamples.map((sample, index) => {
       const x =
         chartSamples.length === 1
@@ -69,7 +60,10 @@ export function PriceChart({
     [points]
   );
   const areaPath = useMemo(
-    () => `${path} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`,
+    () =>
+      points.length === 0
+        ? ""
+        : `${path} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`,
     [path, points, height, padding]
   );
 
@@ -78,6 +72,17 @@ export function PriceChart({
 
   // Determine current active point (defaults to latest point if none hovered, or hovered point)
   const activePoint = activeIndex !== null ? points[activeIndex] : null;
+
+  if (samples.length === 0) {
+    return (
+      <div className="chart-empty">
+        <span className="empty-icon">
+          <Icon name="trend" size={18} />
+        </span>
+        <p>No price history yet. Scan again to add another observation.</p>
+      </div>
+    );
+  }
 
   const handlePointerInteraction = (clientX: number) => {
     if (!svgRef.current || points.length === 0) return;

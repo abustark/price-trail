@@ -1,5 +1,5 @@
 type IconProps = {
-  name: "arrow" | "arrowUp" | "check" | "chevron" | "clock" | "globe" | "link" | "lock" | "logout" | "moon" | "spark" | "sun" | "trend" | "zap" | "external";
+  name: "arrow" | "arrowUp" | "bell" | "check" | "chevron" | "clock" | "globe" | "link" | "lock" | "logout" | "moon" | "spark" | "sun" | "trend" | "zap" | "external";
   size?: number;
   strokeWidth?: number;
 };
@@ -22,6 +22,8 @@ export function Icon({ name, size = 18, strokeWidth = 1.8 }: IconProps) {
       return <svg {...common}><path d="M5 12h14M13 6l6 6-6 6" /></svg>;
     case "arrowUp":
       return <svg {...common}><path d="M12 19V5M6 11l6-6 6 6" /></svg>;
+    case "bell":
+      return <svg {...common}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>;
     case "check":
       return <svg {...common}><path d="m5 12 4 4L19 6" /></svg>;
     case "chevron":

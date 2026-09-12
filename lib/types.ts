@@ -20,6 +20,9 @@ export type ProductDocument = {
   lastPrice?: number;
   mrp?: number;
   discountPercent?: number;
+  targetPrice?: number;
+  targetPriceReached?: boolean;
+  targetAlertEnabled?: boolean;
   historyBackfilled?: boolean;
   historyBackfilledAt?: Date;
   lastError?: string;

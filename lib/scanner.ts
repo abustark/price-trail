@@ -95,6 +95,12 @@ export async function scanAndSaveProduct(inputUrl: string, userId?: string): Pro
     lastPrice: snapshot.price,
     mrp: snapshot.mrp || existing?.mrp,
     discountPercent: snapshot.discountPercent || existing?.discountPercent,
+    targetPrice: existing?.targetPrice,
+    targetPriceReached:
+      existing?.targetPrice != null && snapshot.price != null
+        ? snapshot.price <= existing.targetPrice
+        : existing?.targetPriceReached,
+    targetAlertEnabled: existing?.targetAlertEnabled,
     updatedAt: now
   };
 

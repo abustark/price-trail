@@ -14,6 +14,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Icon, LogoMark } from "@/components/Icons";
 import { getStoreLabel } from "@/lib/stores";
 import { AuthButton } from "@/components/AuthButton";
+import { TargetPriceAlert } from "@/components/TargetPriceAlert";
 
 export const dynamic = "force-dynamic";
 
@@ -95,6 +96,16 @@ export default async function ProductPage({ params }: Props) {
           <ResetHistoryButton productId={id} />
         </div>
       </section>
+
+      <TargetPriceAlert
+        productId={id}
+        currentPrice={product.lastPrice}
+        currency={product.currency}
+        initialTargetPrice={product.targetPrice}
+        initialTargetAlertEnabled={product.targetAlertEnabled}
+        lowestPrice={stats.lowest?.price}
+        mrp={product.mrp}
+      />
 
       <section className="grid stats-grid" aria-label="Price statistics">
         <Stat label="Current price" value={stats.current ? formatMoney(stats.current.price, product.currency) : "None"} note={stats.current ? `as of ${formatDate(stats.current.capturedAt)}` : undefined} />

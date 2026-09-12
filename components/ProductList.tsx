@@ -16,6 +16,8 @@ type ProductListItem = {
   lastScannedAt?: string;
   lastError?: string;
   active?: boolean;
+  targetPrice?: number;
+  targetPriceReached?: boolean;
 };
 
 export function ProductList({ products, signedIn = true }: { products: ProductListItem[]; signedIn?: boolean }) {
@@ -41,6 +43,10 @@ export function ProductList({ products, signedIn = true }: { products: ProductLi
       <div className="product-list">
       {products.map((product) => {
         const storeLabel = getStoreLabel(product.store, product.normalizedUrl, product.storeLabel);
+        const reached =
+          product.targetPrice != null &&
+          (product.targetPriceReached || (product.lastPrice != null && product.lastPrice <= product.targetPrice));
+
         return (
           <Link className="product-card" href={`/products/${product._id}`} key={product._id}>
             <ProductImage src={product.imageUrl} alt={product.title} />
@@ -54,6 +60,11 @@ export function ProductList({ products, signedIn = true }: { products: ProductLi
             <div className="product-card-price">
               <span>Current price</span>
               <strong>{product.lastPrice != null ? formatMoney(product.lastPrice, product.currency) : "-"}</strong>
+              {product.targetPrice ? (
+                <span className={`target-card-badge ${reached ? "reached" : "pending"}`}>
+                  {reached ? "🎯 Target reached" : `🎯 ${formatMoney(product.targetPrice, product.currency)}`}
+                </span>
+              ) : null}
             </div>
             <Icon name="arrow" size={18} />
           </Link>
