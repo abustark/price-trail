@@ -5,6 +5,24 @@ import { FormEvent, useState } from "react";
 import { Icon } from "@/components/Icons";
 import { sanitizeErrorMessage } from "@/lib/errors";
 
+const DEMO_PRODUCTS = [
+  {
+    label: "iPhone 16",
+    store: "amazon",
+    url: "https://www.amazon.in/dp/B0DGJ9N27P"
+  },
+  {
+    label: "Sony WH-1000XM5",
+    store: "flipkart",
+    url: "https://www.flipkart.com/sony-wh-1000xm5-bluetooth-headset/p/itm2dcab549f9922"
+  },
+  {
+    label: "Nike Pegasus",
+    store: "myntra",
+    url: "https://www.myntra.com/sports-shoes/nike/nike-air-zoom-pegasus/30419212/buy"
+  }
+];
+
 export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
   const router = useRouter();
   const [url, setUrl] = useState("");
@@ -12,15 +30,9 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
   const [message, setMessage] = useState("");
   const [pasteLoading, setPasteLoading] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!url.trim()) return;
-
-    if (!signedIn) {
-      setStatus("error");
-      setMessage("Sign in with Google before tracking products.");
-      return;
-    }
+  async function trackUrl(targetUrl: string) {
+    const trimmed = targetUrl.trim();
+    if (!trimmed) return;
 
     setStatus("loading");
     setMessage("Reading product price…");
@@ -29,16 +41,14 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
       const response = await fetch("/api/products", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url: url.trim() })
+        body: JSON.stringify({ url: trimmed })
       });
       const payload = await response.json();
 
       if (!response.ok) {
         setStatus("error");
         setMessage(
-          response.status === 401
-            ? "Sign in with Google before tracking products."
-            : sanitizeErrorMessage(payload.error, "Could not scan this product. Please try again.")
+          sanitizeErrorMessage(payload.error, "Could not scan this product. Please try again.")
         );
         return;
       }
@@ -53,6 +63,16 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
       setStatus("error");
       setMessage("Connection failed. Try again.");
     }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await trackUrl(url);
+  }
+
+  function handleSelectDemo(demoUrl: string) {
+    setUrl(demoUrl);
+    trackUrl(demoUrl);
   }
 
   async function pasteFromClipboard() {
@@ -113,7 +133,30 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
           <span>{status === "navigating" ? "Opening" : status === "loading" ? "Scanning" : "Track price"}</span>
         </button>
       </form>
-      <div className="form-note"><Icon name={signedIn ? "lock" : "globe"} size={14} /> {status === "idle" ? (signedIn ? "Saved to your account watchlist" : "Google sign in required to track") : "Scanning…"}</div>
+
+      <div className="demo-chips">
+        <span className="demo-label">Try example:</span>
+        {DEMO_PRODUCTS.map((demo) => (
+          <button
+            key={demo.label}
+            className="demo-chip"
+            type="button"
+            onClick={() => handleSelectDemo(demo.url)}
+            disabled={busy}
+            aria-label={`Try sample: ${demo.label}`}
+          >
+            <span className={`store-dot ${demo.store}`} aria-hidden="true" />
+            <span>{demo.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="form-note">
+        <Icon name={signedIn ? "lock" : "globe"} size={14} />{" "}
+        {status === "idle"
+          ? (signedIn ? "Saved to your account watchlist" : "Saved to this browser · Sign in anytime to sync across devices")
+          : "Scanning…"}
+      </div>
       <div className={`status-slot ${message ? "has-message" : ""}`}>
         {message ? (
           <div className={`status-banner ${status}`} role={status === "error" ? "alert" : "status"} aria-live={status === "error" ? "assertive" : "polite"} aria-atomic="true">

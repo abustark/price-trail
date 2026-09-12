@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
+import { getViewer } from "@/lib/viewer";
 import type { ProductDocument } from "@/lib/types";
 import { TrackForm } from "@/components/TrackForm";
 import { ProductList } from "@/components/ProductList";
@@ -7,15 +8,13 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AuthButton } from "@/components/AuthButton";
 import { Icon, LogoMark } from "@/components/Icons";
-import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const session = await auth();
-  const userId = session?.user?.id;
-  const products = userId ? await loadProducts(userId) : [];
-  const signedIn = Boolean(userId);
+  const viewer = await getViewer();
+  const products = viewer.userId ? await loadProducts(viewer.userId) : [];
+  const signedIn = viewer.signedIn;
 
   return (
     <main className="shell home-shell" id="main-content">
@@ -28,10 +27,16 @@ export default async function Home() {
           <a href="#watchlist">Watchlist</a>
         </nav>
         <div className="top-actions">
-          <AuthButton session={session} />
+          <AuthButton session={viewer.session} />
           <ThemeToggle />
         </div>
       </header>
+
+      {viewer.claimedCount && viewer.claimedCount > 0 ? (
+        <div className="account-notice" role="status">
+          Saved {viewer.claimedCount} {viewer.claimedCount === 1 ? "product" : "products"} from this browser to your Google account.
+        </div>
+      ) : null}
 
       <section className="hero hero-grid">
         <div className="hero-copy-block">
@@ -71,14 +76,12 @@ export default async function Home() {
 }
 
 async function loadProducts(userId?: string): Promise<ProductDocument[]> {
+  if (!userId) return [];
   try {
     const db = await getDb();
-    const targetUser = userId || "guest";
     return await db
       .collection<ProductDocument>("products")
-      .find({
-        $or: [{ userId: targetUser }, { userId: "guest" }, { userId: { $exists: false } }]
-      })
+      .find({ userId })
       .sort({ updatedAt: -1 })
       .limit(50)
       .toArray();

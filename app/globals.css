@@ -175,6 +175,16 @@ button { -webkit-tap-highlight-color: transparent; }
 .search-button { min-height: 57px; color: #10302b; background: #9aefdd; }
 .search-button:hover { color: #10302b; background: #b4f6e8; }
 .search-button:not(:disabled):active { transform: translateY(1px) scale(0.985); }
+.demo-chips { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 13px; }
+.demo-label { font-size: 11px; font-weight: 750; color: #a9d8ce; }
+.demo-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; border: 1px solid rgba(255,255,255,0.16); border-radius: 999px; padding: 4px 11px; background: rgba(255,255,255,0.08); color: #effcf8; font-size: 11px; font-weight: 700; cursor: pointer; transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1); }
+.demo-chip:hover { border-color: #73d9c6; background: rgba(255,255,255,0.16); transform: translateY(-1px); }
+.demo-chip:active { transform: translateY(0.5px) scale(0.98); }
+.demo-chip:disabled { opacity: 0.6; cursor: wait; transform: none; }
+.demo-chip .store-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+.guest-sync-banner { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; padding: 10px 14px; border: 1px dashed color-mix(in srgb, var(--accent) 36%, var(--line)); border-radius: 12px; background: var(--accent-wash); color: var(--accent-strong); font-size: 12px; font-weight: 650; }
+
 .form-note { display: flex; align-items: center; gap: 6px; margin-top: 11px; color: var(--muted); font-size: 11px; }
 .hero-tracker-card .form-note { color: #b2ede1; font-weight: 550; }
 .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.35); border-top-color: currentColor; border-radius: 50%; animation: spin 0.8s linear infinite; }

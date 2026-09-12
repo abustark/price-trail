@@ -1,9 +1,9 @@
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
 import { sanitizeErrorMessage } from "@/lib/errors";
 import { scanAndSaveProduct } from "@/lib/scanner";
+import { getViewer } from "@/lib/viewer";
 import type { ProductDocument } from "@/lib/types";
 
 type Params = {
@@ -15,22 +15,22 @@ export async function POST(_request: Request, { params }: Params) {
   if (!ObjectId.isValid(id)) {
     return NextResponse.json({ error: "Invalid product id." }, { status: 400 });
   }
-  const session = await auth();
-  if (!session?.user?.id) {
+  const viewer = await getViewer();
+  if (!viewer.userId) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
   const db = await getDb();
   const product = await db.collection<ProductDocument>("products").findOne({
     _id: new ObjectId(id),
-    userId: session.user.id
+    userId: viewer.userId
   });
   if (!product) {
     return NextResponse.json({ error: "Product not found." }, { status: 404 });
   }
 
   try {
-    const updated = await scanAndSaveProduct(product.normalizedUrl, session.user.id);
+    const updated = await scanAndSaveProduct(product.normalizedUrl, viewer.userId);
     return NextResponse.json({ product: { ...updated, _id: updated._id?.toString() } });
   } catch (error) {
     const message = sanitizeErrorMessage(error, "Scan failed. Please try again.");

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { ensureIndexes, getDb } from "@/lib/db";
 import { sanitizeErrorMessage } from "@/lib/errors";
 import { scanAndSaveProduct } from "@/lib/scanner";
+import { getOrCreateViewer, getViewer, setGuestCookie } from "@/lib/viewer";
 import type { ProductDocument } from "@/lib/types";
 
 const TrackSchema = z.object({
@@ -11,14 +11,14 @@ const TrackSchema = z.object({
 });
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ products: [] });
+  const viewer = await getViewer();
+  if (!viewer.userId) return NextResponse.json({ products: [] });
 
   await ensureIndexes();
   const db = await getDb();
   const products = await db
     .collection<ProductDocument>("products")
-    .find({ userId: session.user.id })
+    .find({ userId: viewer.userId })
     .sort({ updatedAt: -1 })
     .limit(50)
     .toArray();
@@ -33,23 +33,20 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Sign in with Google before tracking products." },
-        { status: 401 }
-      );
-    }
+    const viewer = await getOrCreateViewer();
     const body = TrackSchema.parse(await request.json());
     await ensureIndexes();
-    const product = await scanAndSaveProduct(body.url, session.user.id);
+    const product = await scanAndSaveProduct(body.url, viewer.userId);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       product: {
         ...product,
         _id: product._id?.toString()
       }
     });
+
+    setGuestCookie(response, viewer.createdGuestId);
+    return response;
   } catch (error) {
     const message = sanitizeErrorMessage(error, "Could not track product. Please try again.");
     return NextResponse.json({ error: message }, { status: 400 });

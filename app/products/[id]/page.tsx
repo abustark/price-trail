@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { notFound } from "next/navigation";
 import { calculatePriceStats } from "@/lib/analytics";
 import { getDb } from "@/lib/db";
+import { getViewer } from "@/lib/viewer";
 import type { PriceSampleDocument, ProductDocument } from "@/lib/types";
 import { PriceChart } from "@/components/PriceChart";
 import { ProductImage } from "@/components/ProductImage";
@@ -13,7 +14,6 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Icon, LogoMark } from "@/components/Icons";
 import { getStoreLabel } from "@/lib/stores";
 import { AuthButton } from "@/components/AuthButton";
-import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,14 +24,14 @@ type Props = {
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
   if (!ObjectId.isValid(id)) notFound();
-  const session = await auth();
-  if (!session?.user?.id) notFound();
+  const viewer = await getViewer();
+  if (!viewer.userId) notFound();
 
   const db = await getDb();
   const productId = new ObjectId(id);
   const product = await db.collection<ProductDocument>("products").findOne({
     _id: productId,
-    userId: session.user.id
+    userId: viewer.userId
   });
   if (!product) notFound();
 
@@ -53,7 +53,7 @@ export default async function ProductPage({ params }: Props) {
           <span>PriceTrail</span>
         </Link>
         <div className="top-actions">
-          <AuthButton session={session} />
+          <AuthButton session={viewer.session} />
           <ThemeToggle />
         </div>
       </header>
