@@ -20,9 +20,18 @@ type ProductListItem = {
 
 export function ProductList({ products, signedIn = true }: { products: ProductListItem[]; signedIn?: boolean }) {
   if (products.length === 0) {
+    if (!signedIn) {
+      return (
+        <div className="empty-state">
+          <div className="empty-icon"><Icon name="lock" size={21} /></div>
+          <strong>Sign in to start your watchlist.</strong>
+          <p>Sign in with Google above to track products and view price histories.</p>
+        </div>
+      );
+    }
     return (
       <div className="empty-state">
-        <div className="empty-icon"><Icon name={signedIn ? "spark" : "lock"} size={21} /></div>
+        <div className="empty-icon"><Icon name="spark" size={21} /></div>
         <strong>Start your watchlist.</strong>
         <p>Paste a link above to start tracking.</p>
         <a className="text-link" href="#main-content">Add a product ↑</a>

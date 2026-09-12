@@ -7,14 +7,15 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AuthButton } from "@/components/AuthButton";
 import { Icon, LogoMark } from "@/components/Icons";
-import { getViewer } from "@/lib/viewer";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const viewer = await getViewer();
-  const products = await loadProducts(viewer.userId);
-  const signedIn = viewer.signedIn;
+  const session = await auth();
+  const userId = session?.user?.id;
+  const products = userId ? await loadProducts(userId) : [];
+  const signedIn = Boolean(userId);
 
   return (
     <main className="shell home-shell" id="main-content">
@@ -27,11 +28,10 @@ export default async function Home() {
           <a href="#watchlist">Watchlist</a>
         </nav>
         <div className="top-actions">
-          <AuthButton session={viewer.session} />
+          <AuthButton session={session} />
           <ThemeToggle />
         </div>
       </header>
-      {viewer.claimedCount ? <p className="account-notice" role="status">Watchlist saved to your account.</p> : null}
 
       <section className="hero hero-grid">
         <div className="hero-copy-block">

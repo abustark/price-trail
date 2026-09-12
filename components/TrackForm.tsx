@@ -15,6 +15,12 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
     event.preventDefault();
     if (!url.trim()) return;
 
+    if (!signedIn) {
+      setStatus("error");
+      setMessage("Sign in with Google before tracking products.");
+      return;
+    }
+
     setStatus("loading");
     setMessage("Reading product price…");
 
@@ -102,7 +108,7 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
           <span>{status === "navigating" ? "Opening" : status === "loading" ? "Scanning" : "Track price"}</span>
         </button>
       </form>
-      <div className="form-note"><Icon name={signedIn ? "lock" : "globe"} size={14} /> {status === "idle" ? signedIn ? "Saved to your watchlist" : "Saved in this browser" : "Scanning…"}</div>
+      <div className="form-note"><Icon name={signedIn ? "lock" : "globe"} size={14} /> {status === "idle" ? (signedIn ? "Saved to your account watchlist" : "Google sign in required to track") : "Scanning…"}</div>
       <div className={`status-slot ${message ? "has-message" : ""}`}>
         {message ? (
           <div className={`status-banner ${status}`} role={status === "error" ? "alert" : "status"} aria-live={status === "error" ? "assertive" : "polite"} aria-atomic="true">

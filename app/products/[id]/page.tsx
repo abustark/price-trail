@@ -13,7 +13,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Icon, LogoMark } from "@/components/Icons";
 import { getStoreLabel } from "@/lib/stores";
 import { AuthButton } from "@/components/AuthButton";
-import { getViewer } from "@/lib/viewer";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,14 +24,14 @@ type Props = {
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
   if (!ObjectId.isValid(id)) notFound();
-  const viewer = await getViewer();
-  if (!viewer.userId) notFound();
+  const session = await auth();
+  if (!session?.user?.id) notFound();
 
   const db = await getDb();
   const productId = new ObjectId(id);
   const product = await db.collection<ProductDocument>("products").findOne({
     _id: productId,
-    userId: viewer.userId
+    userId: session.user.id
   });
   if (!product) notFound();
 
@@ -53,7 +53,7 @@ export default async function ProductPage({ params }: Props) {
           <span>PriceTrail</span>
         </Link>
         <div className="top-actions">
-          <AuthButton session={viewer.session} />
+          <AuthButton session={session} />
           <ThemeToggle />
         </div>
       </header>
