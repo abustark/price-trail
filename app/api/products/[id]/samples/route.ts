@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
+import { sanitizeErrorMessage } from "@/lib/errors";
 import type { PriceSampleDocument, ProductDocument } from "@/lib/types";
 
 type Params = {
@@ -9,39 +10,44 @@ type Params = {
 };
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const { id } = await params;
-  if (!ObjectId.isValid(id)) {
-    return NextResponse.json({ error: "Invalid product id." }, { status: 400 });
-  }
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
-  }
-
-  const db = await getDb();
-  const productId = new ObjectId(id);
-  const product = await db.collection<ProductDocument>("products").findOne({
-    _id: productId,
-    userId: session.user.id
-  });
-  if (!product) {
-    return NextResponse.json({ error: "Product not found." }, { status: 404 });
-  }
-
-  const result = await db.collection<PriceSampleDocument>("price_samples").deleteMany({ productId });
-  await db.collection<ProductDocument>("products").updateOne(
-    { _id: productId },
-    {
-      $unset: {
-        lastPrice: "",
-        lastError: "",
-        lastScannedAt: ""
-      },
-      $set: {
-        updatedAt: new Date()
-      }
+  try {
+    const { id } = await params;
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid product id." }, { status: 400 });
     }
-  );
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+    }
 
-  return NextResponse.json({ deleted: result.deletedCount });
+    const db = await getDb();
+    const productId = new ObjectId(id);
+    const product = await db.collection<ProductDocument>("products").findOne({
+      _id: productId,
+      userId: session.user.id
+    });
+    if (!product) {
+      return NextResponse.json({ error: "Product not found." }, { status: 404 });
+    }
+
+    const result = await db.collection<PriceSampleDocument>("price_samples").deleteMany({ productId });
+    await db.collection<ProductDocument>("products").updateOne(
+      { _id: productId },
+      {
+        $unset: {
+          lastPrice: "",
+          lastError: "",
+          lastScannedAt: ""
+        },
+        $set: {
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    return NextResponse.json({ deleted: result.deletedCount });
+  } catch (error) {
+    const message = sanitizeErrorMessage(error, "Could not reset history. Please try again.");
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }

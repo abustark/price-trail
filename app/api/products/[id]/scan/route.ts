@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
+import { sanitizeErrorMessage } from "@/lib/errors";
 import { scanAndSaveProduct } from "@/lib/scanner";
 import type { ProductDocument } from "@/lib/types";
 
@@ -32,7 +33,7 @@ export async function POST(_request: Request, { params }: Params) {
     const updated = await scanAndSaveProduct(product.normalizedUrl, session.user.id);
     return NextResponse.json({ product: { ...updated, _id: updated._id?.toString() } });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Scan failed.";
+    const message = sanitizeErrorMessage(error, "Scan failed. Please try again.");
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { ensureIndexes, getDb } from "@/lib/db";
+import { sanitizeErrorMessage } from "@/lib/errors";
 import { scanAndSaveProduct } from "@/lib/scanner";
 import type { ProductDocument } from "@/lib/types";
 
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
       }
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not track product.";
+    const message = sanitizeErrorMessage(error, "Could not track product. Please try again.");
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

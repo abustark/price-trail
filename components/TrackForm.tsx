@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Icon } from "@/components/Icons";
+import { sanitizeErrorMessage } from "@/lib/errors";
 
 export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
   const router = useRouter();
@@ -34,7 +35,11 @@ export function TrackForm({ signedIn = false }: { signedIn?: boolean }) {
 
       if (!response.ok) {
         setStatus("error");
-        setMessage(response.status === 401 ? "Sign in with Google before tracking products." : payload.error || "Could not scan this product.");
+        setMessage(
+          response.status === 401
+            ? "Sign in with Google before tracking products."
+            : sanitizeErrorMessage(payload.error, "Could not scan this product. Please try again.")
+        );
         return;
       }
 
