@@ -18,6 +18,8 @@ type ProductListItem = {
   active?: boolean;
   targetPrice?: number;
   targetPriceReached?: boolean;
+  mrp?: number;
+  discountPercent?: number;
 };
 
 export function ProductList({ products, signedIn = true }: { products: ProductListItem[]; signedIn?: boolean }) {
@@ -55,6 +57,11 @@ export function ProductList({ products, signedIn = true }: { products: ProductLi
               <div className="product-meta">
                 <span className="store-chip"><span className={`store-dot ${product.store}`} />{storeLabel}</span>
                 <span className="scan-status"><span className={product.lastError ? "status-dot error-dot" : "status-dot"} />{product.lastError ? "Needs attention" : product.active === false ? "Paused" : product.lastScannedAt ? formatRelativeDate(product.lastScannedAt) : "Waiting"}</span>
+                {product.mrp && product.lastPrice && product.mrp > product.lastPrice ? (
+                  <span className="deal-pill">
+                    {Math.round(((product.mrp - product.lastPrice) / product.mrp) * 100)}% off MRP
+                  </span>
+                ) : null}
               </div>
             </div>
             <div className="product-card-price">

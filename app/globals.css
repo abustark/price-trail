@@ -299,6 +299,50 @@ button { -webkit-tap-highlight-color: transparent; }
 .target-chip { min-height: 32px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-muted); color: var(--ink); font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s ease; }
 .target-chip:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); }
 
+/* Watchlist deal pill */
+.deal-pill { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 999px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); color: rgb(217, 119, 6); font-size: 10px; font-weight: 800; letter-spacing: -0.01em; }
+
+/* Buying Advice Card */
+.advice-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: center; margin-bottom: 18px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface); box-shadow: var(--shadow-soft); position: relative; overflow: hidden; }
+.advice-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 4px 0 0 4px; }
+.advice-card.verdict-buy::before { background: var(--success); }
+.advice-card.verdict-fair::before { background: #3b82f6; }
+.advice-card.verdict-wait::before { background: var(--danger); }
+
+.advice-card.verdict-buy { border-color: color-mix(in srgb, var(--success) 35%, var(--line)); background: linear-gradient(135deg, color-mix(in srgb, var(--success) 6%, var(--surface)), var(--surface)); }
+.advice-card.verdict-fair { border-color: color-mix(in srgb, #3b82f6 30%, var(--line)); background: linear-gradient(135deg, color-mix(in srgb, #3b82f6 5%, var(--surface)), var(--surface)); }
+.advice-card.verdict-wait { border-color: color-mix(in srgb, var(--danger) 30%, var(--line)); background: linear-gradient(135deg, color-mix(in srgb, var(--danger) 5%, var(--surface)), var(--surface)); }
+
+.advice-main { display: grid; gap: 8px; }
+.advice-badge-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.advice-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 7px; font-size: 10.5px; font-weight: 850; letter-spacing: 0.04em; text-transform: uppercase; }
+.verdict-buy .advice-badge { background: color-mix(in srgb, var(--success) 16%, var(--surface)); color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 40%, transparent); }
+.verdict-fair .advice-badge { background: color-mix(in srgb, #3b82f6 16%, var(--surface)); color: #2563eb; border: 1px solid color-mix(in srgb, #3b82f6 40%, transparent); }
+.verdict-wait .advice-badge { background: color-mix(in srgb, var(--danger) 16%, var(--surface)); color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent); }
+
+.advice-score-tag { color: var(--muted); font-size: 11.5px; font-weight: 600; }
+.advice-score-tag strong { color: var(--ink); font-weight: 800; }
+
+.advice-headline { margin: 2px 0 0; color: var(--ink); font-size: 18px; font-weight: 800; letter-spacing: -0.03em; }
+.advice-reason { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+.advice-signals { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.advice-signal-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; background: var(--surface-muted); border: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 700; }
+.advice-signal-chip.highlight { background: color-mix(in srgb, var(--success) 10%, var(--surface-muted)); border-color: color-mix(in srgb, var(--success) 35%, var(--line)); color: var(--success); }
+.signal-icon { font-size: 12px; }
+
+/* Deal Score Circular Gauge */
+.advice-meter-col { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-left: 10px; }
+.advice-gauge { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.gauge-circle { position: relative; width: 68px; height: 68px; }
+.gauge-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.gauge-bg { fill: none; stroke: var(--line); stroke-width: 3.2; }
+.gauge-progress { fill: none; stroke-width: 3.2; stroke-linecap: round; transition: stroke-dasharray 0.6s ease; }
+.gauge-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.gauge-val { font-size: 18px; font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; }
+.gauge-sub { font-size: 9px; color: var(--muted); margin-top: 1px; font-weight: 700; }
+.gauge-label { margin-top: 5px; font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
 .page-transition { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter: blur(12px); }.transition-card { display: grid; justify-items: center; gap: 10px; width: min(420px, 100%); padding: 26px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); text-align: center; }.transition-card strong { color: var(--ink); font-size: 20px; }.transition-ring { width: 52px; height: 52px; border: 4px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
 @keyframes spin { to { transform: rotate(360deg); } }

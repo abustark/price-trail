@@ -15,6 +15,7 @@ import { Icon, LogoMark } from "@/components/Icons";
 import { getStoreLabel } from "@/lib/stores";
 import { AuthButton } from "@/components/AuthButton";
 import { TargetPriceAlert } from "@/components/TargetPriceAlert";
+import { BuyAdviceCard } from "@/components/BuyAdviceCard";
 
 export const dynamic = "force-dynamic";
 
@@ -96,6 +97,8 @@ export default async function ProductPage({ params }: Props) {
           <ResetHistoryButton productId={id} />
         </div>
       </section>
+
+      <BuyAdviceCard advice={stats.advice} currency={product.currency} />
 
       <TargetPriceAlert
         productId={id}

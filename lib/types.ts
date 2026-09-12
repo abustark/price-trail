@@ -57,6 +57,19 @@ export type ScanResult = {
   }>;
 };
 
+export type DealVerdict = "buy_now" | "fair_price" | "wait";
+
+export type BuyAdvice = {
+  verdict: DealVerdict;
+  headline: string;
+  reason: string;
+  score: number;
+  percentile: number;
+  recentTrend: "falling" | "stable" | "rising";
+  recentChangeAmount?: number;
+  potentialSavings?: number;
+};
+
 export type PriceStats = {
   sampleCount: number;
   highest?: { price: number; capturedAt: string };
@@ -71,4 +84,5 @@ export type PriceStats = {
     averageDaysBetweenChanges?: number;
     description: string;
   };
+  advice?: BuyAdvice;
 };

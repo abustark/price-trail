@@ -53,6 +53,16 @@ export function calculatePriceStats(samples: PriceSampleDocument[], mrp?: number
   const averageHours = averageMs ? averageMs / (1000 * 60 * 60) : undefined;
   const averageDays = averageHours ? averageHours / 24 : undefined;
 
+  const advice = generateBuyAdvice({
+    sorted,
+    highest,
+    lowest,
+    current,
+    commonPrice,
+    effectiveMrp,
+    averageDays
+  });
+
   return {
     sampleCount: sorted.length,
     highest: {
@@ -79,8 +89,131 @@ export function calculatePriceStats(samples: PriceSampleDocument[], mrp?: number
       averageHoursBetweenChanges: averageHours ? Math.round(averageHours * 10) / 10 : undefined,
       averageDaysBetweenChanges: averageDays ? Math.round(averageDays * 10) / 10 : undefined,
       description: describeChangeFrequency(changedAt.length, averageHours)
-    }
+    },
+    advice
   };
+}
+
+function generateBuyAdvice({
+  sorted,
+  highest,
+  lowest,
+  current,
+  commonPrice,
+  effectiveMrp,
+  averageDays
+}: {
+  sorted: PriceSampleDocument[];
+  highest: PriceSampleDocument;
+  lowest: PriceSampleDocument;
+  current: PriceSampleDocument;
+  commonPrice: number;
+  effectiveMrp?: number;
+  averageDays?: number;
+}) {
+  if (sorted.length <= 1) {
+    return {
+      verdict: "fair_price" as const,
+      headline: "Gathering Baseline",
+      reason: "Tracking just began. Additional scans will detect upcoming price drops and seasonal sales.",
+      score: 60,
+      percentile: 50,
+      recentTrend: "stable" as const
+    };
+  }
+
+  // Recent trend detection
+  let prevPrice = current.price;
+  for (let i = sorted.length - 2; i >= 0; i--) {
+    if (sorted[i].price !== current.price) {
+      prevPrice = sorted[i].price;
+      break;
+    }
+  }
+
+  const diff = current.price - prevPrice;
+  const recentTrend: "falling" | "stable" | "rising" =
+    diff < 0 ? "falling" : diff > 0 ? "rising" : "stable";
+  const recentChangeAmount = Math.abs(diff);
+
+  const range = highest.price - lowest.price;
+  const percentile =
+    range <= 0 ? 50 : Math.max(0, Math.min(100, Math.round(((current.price - lowest.price) / range) * 100)));
+
+  // Calculate composite score (0 - 100)
+  let score = 100 - percentile;
+
+  if (current.price <= lowest.price) {
+    score = Math.max(score, sorted.length > 2 ? 96 : 90);
+  } else if (current.price <= commonPrice) {
+    score = Math.max(score, 68);
+  }
+
+  if (effectiveMrp && effectiveMrp > current.price) {
+    const discountRatio = (effectiveMrp - current.price) / effectiveMrp;
+    if (discountRatio >= 0.25) score += 6;
+  }
+
+  if (recentTrend === "falling") score += 4;
+  if (recentTrend === "rising") score -= 6;
+
+  score = Math.max(10, Math.min(99, Math.round(score)));
+
+  let verdict: "buy_now" | "fair_price" | "wait";
+  if (score >= 75 || current.price <= lowest.price) {
+    verdict = "buy_now";
+  } else if (score >= 48) {
+    verdict = "fair_price";
+  } else {
+    verdict = "wait";
+  }
+
+  const potentialSavings =
+    current.price > lowest.price
+      ? current.price - lowest.price
+      : effectiveMrp && effectiveMrp > current.price
+      ? effectiveMrp - current.price
+      : 0;
+
+  let headline = "";
+  let reason = "";
+
+  if (verdict === "buy_now") {
+    if (current.price <= lowest.price) {
+      headline = "Best Time to Buy — All-Time Low";
+      reason = `Currently at the lowest price ever observed in tracking history (${formatPrice(current.price)}).`;
+    } else {
+      headline = "Great Deal — Near Historical Low";
+      reason = `In the bottom ${Math.max(10, percentile)}% of observed prices, substantially below the high of ${formatPrice(highest.price)}.`;
+    }
+  } else if (verdict === "fair_price") {
+    headline = "Fair Price — Typical Market Range";
+    reason = `Matches typical selling price of ${formatPrice(commonPrice)}. Fair purchase if needed right away, or set a target alert for extra discounts.`;
+  } else {
+    headline = "Wait for Drop — Above Typical Price";
+    reason = `Currently near peak recorded price (${formatPrice(highest.price)}). Waiting for a drop or setting an alert is recommended.${
+      averageDays ? ` Prices historically adjust every ~${Math.round(averageDays)} days.` : ""
+    }`;
+  }
+
+  return {
+    verdict,
+    headline,
+    reason,
+    score,
+    percentile,
+    recentTrend,
+    recentChangeAmount: recentChangeAmount > 0 ? recentChangeAmount : undefined,
+    potentialSavings: potentialSavings > 0 ? potentialSavings : undefined
+  };
+}
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0
+  }).format(value);
 }
 
 function describeChangeFrequency(changeCount: number, averageHours?: number): string {
