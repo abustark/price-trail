@@ -65,7 +65,7 @@ export default async function ProductPage({ params }: Props) {
         <div className="product-hero-card">
           <ProductImage src={product.imageUrl} alt={product.title} priority />
           <div>
-            <div className="detail-kicker"><span className="status-dot" /> Watching price</div>
+            <div className="detail-kicker"><span className="status-dot" aria-hidden="true" /> Watching price</div>
             <h1 className="product-hero-title">{product.title}</h1>
             <div className="product-meta">
               <span className="meta-chip">{getStoreLabel(product.store, product.normalizedUrl, product.storeLabel)}</span>
@@ -92,7 +92,7 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </div>
         {product.lastError ? <p className="error">Last scan error: {product.lastError}</p> : null}
-        <div className="product-actions" aria-label="Product actions">
+        <div className="product-actions" role="group" aria-label="Product actions">
           <RescanButton productId={id} />
           <ResetHistoryButton productId={id} />
         </div>

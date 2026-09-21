@@ -138,7 +138,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .hero-copy-block { padding: 11px 0 15px; }
 .hero-kicker { display: inline-flex; align-items: center; gap: 9px; padding: 7px 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--accent-strong); background: color-mix(in srgb, var(--accent-soft) 48%, transparent); font-size: 11px; font-weight: 800; letter-spacing: 0.01em; }
 .kicker-dot { width: 7px; height: 7px; border-radius: 50%; background: #17b897; box-shadow: 0 0 0 4px rgba(23,184,151,0.14); }
-.hero h1 { max-width: 680px; margin: 22px 0 18px; color: var(--ink); font-size: clamp(46px, 6.5vw, 80px); line-height: 1.04; letter-spacing: -0.045em; }
+.hero h1 { max-width: 680px; margin: 22px 0 18px; color: var(--ink); font-size: clamp(46px, 6.5vw, 80px); line-height: 1.04; letter-spacing: -0.045em; text-wrap: balance; }
 .hero h1 em { color: var(--accent); font-style: normal; }
 .hero-copy { max-width: 560px; margin: 0 0 24px; color: var(--muted); font-size: 16px; line-height: 1.65; }
 .hero-tracker-card { position: relative; overflow: hidden; padding: 27px; border: 1px solid color-mix(in srgb, #8ae9d5 24%, transparent); border-radius: 25px; color: #effcf8; background: var(--dark-card); box-shadow: inset 0 1px 0 rgba(217, 255, 247, 0.08), 0 24px 50px rgba(16, 61, 54, 0.24); }
@@ -274,7 +274,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .target-icon-wrap { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-strong); flex-shrink: 0; }
 .target-alert-title strong { display: block; color: var(--ink); font-size: 15px; font-weight: 800; letter-spacing: -0.02em; }
 .target-alert-title p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
-.target-edit-btn { min-height: 32px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-muted); color: var(--ink); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s ease; }
+.target-edit-btn { min-height: 32px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-muted); color: var(--ink); font-size: 12px; font-weight: 700; cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease; }
 .target-edit-btn:hover { border-color: var(--accent); color: var(--accent-strong); }
 .target-status-banner { margin-top: 12px; padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-strong); font-size: 12px; font-weight: 700; }
 .target-summary { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }

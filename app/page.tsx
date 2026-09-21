@@ -40,7 +40,7 @@ export default async function Home() {
 
       <section className="hero hero-grid">
         <div className="hero-copy-block">
-          <div className="hero-kicker"><span className="kicker-dot" /> Price history for online shopping</div>
+          <div className="hero-kicker"><span className="kicker-dot" aria-hidden="true" /> Price history for online shopping</div>
           <h1>Track prices <em>before you buy.</em></h1>
           <p className="hero-copy">Paste a product link to see its price history.</p>
         </div>

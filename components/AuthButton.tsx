@@ -35,11 +35,11 @@ export async function AuthButton({ session }: { session?: Session | null } = {})
   const email = currentSession.user.email || "Google account";
 
   return (
-    <details className="account-menu">
+    <details className="account-menu" onKeyDown={(e) => { if (e.key === "Escape") { (e.currentTarget as HTMLDetailsElement).open = false; } }}>
       <summary className="user-chip" aria-label="Open account menu" title={displayName}>
         {currentSession.user.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={currentSession.user.image} alt="" />
+          <img src={currentSession.user.image} alt="" width={30} height={30} />
         ) : (
           <span className="avatar-fallback">{displayName.charAt(0).toUpperCase()}</span>
         )}

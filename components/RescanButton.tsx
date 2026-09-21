@@ -27,7 +27,7 @@ export function RescanButton({ productId }: { productId: string }) {
     <div>
       <button className="button secondary" disabled={loading} onClick={rescan} type="button">
         {loading ? <span className="spinner" aria-hidden="true" /> : null}
-        <span>{loading ? "Scanning" : "Scan now"}</span>
+        <span>{loading ? "Scanning…" : "Scan now"}</span>
       </button>
       {error ? <p className="error">{error}</p> : null}
     </div>

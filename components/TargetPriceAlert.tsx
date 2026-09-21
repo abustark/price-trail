@@ -124,7 +124,7 @@ export function TargetPriceAlert({
         ) : null}
       </div>
 
-      {statusMsg ? <div className="target-status-banner">{statusMsg}</div> : null}
+      {statusMsg ? <div className="target-status-banner" role="status" aria-live="polite">{statusMsg}</div> : null}
 
       {/* Target status display when targetPrice is set and not editing */}
       {targetPrice && !isEditing ? (
@@ -132,7 +132,7 @@ export function TargetPriceAlert({
           {isTargetReached ? (
             <div className="target-reached-box">
               <div className="target-reached-pill">
-                <span className="dot pulse" /> 🎯 Target Price Reached!
+                <span className="dot pulse" aria-hidden="true" /> 🎯 Target Price Reached!
               </div>
               <p>
                 Current price <strong>{formatCurrency(currentPrice!)}</strong> is at or below your
@@ -168,9 +168,11 @@ export function TargetPriceAlert({
               <span className="target-currency-prefix">{currency === "INR" ? "₹" : currency}</span>
               <input
                 type="number"
+                name="targetPrice"
+                autoComplete="off"
                 min="1"
                 step="1"
-                placeholder={currentPrice ? String(Math.round(currentPrice * 0.9)) : "Target amount"}
+                placeholder={currentPrice ? `e.g. ${Math.round(currentPrice * 0.9)}…` : "Target amount…"}
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
                 className="target-input"
@@ -183,7 +185,7 @@ export function TargetPriceAlert({
               disabled={isPending}
               className="button button-primary target-save-btn"
             >
-              {isPending ? "Saving..." : "Set Alert"}
+              {isPending ? "Saving…" : "Set Alert"}
             </button>
             {targetPrice ? (
               <button

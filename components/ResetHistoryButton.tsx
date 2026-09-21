@@ -39,7 +39,7 @@ export function ResetHistoryButton({ productId }: { productId: string }) {
     <div>
       <button className="button danger" disabled={loading} onClick={resetHistory} type="button">
         {loading ? <span className="spinner" aria-hidden="true" /> : null}
-        <span>{loading ? "Resetting" : "Reset history"}</span>
+        <span>{loading ? "Resetting…" : "Reset history"}</span>
       </button>
       {error ? <p className="error">{error}</p> : null}
     </div>

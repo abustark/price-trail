@@ -147,9 +147,29 @@ export function PriceChart({
           viewBox={`0 0 ${width} ${height}`}
           role="img"
           aria-label={`Price history chart. Current ${formatMoney(samples[samples.length - 1].price, currency)}. Lowest ${formatMoney(Math.min(...samples.map((s) => s.price)), currency)}. Highest ${formatMoney(Math.max(...samples.map((s) => s.price)), currency)}.`}
+          tabIndex={0}
           onPointerMove={(e) => handlePointerInteraction(e.clientX)}
           onPointerDown={(e) => handlePointerInteraction(e.clientX)}
           onPointerLeave={() => setActiveIndex(null)}
+          onKeyDown={(e) => {
+            if (points.length === 0) return;
+            if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+              e.preventDefault();
+              setActiveIndex((prev) => (prev === null ? 0 : Math.min(prev + 1, points.length - 1)));
+            } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+              e.preventDefault();
+              setActiveIndex((prev) => (prev === null ? points.length - 1 : Math.max(prev - 1, 0)));
+            } else if (e.key === "Home") {
+              e.preventDefault();
+              setActiveIndex(0);
+            } else if (e.key === "End") {
+              e.preventDefault();
+              setActiveIndex(points.length - 1);
+            } else if (e.key === "Escape") {
+              setActiveIndex(null);
+            }
+          }}
+          onBlur={() => setActiveIndex(null)}
         >
           <defs>
             <linearGradient id="chart-fill" x1="0" x2="0" y1="0" y2="1">

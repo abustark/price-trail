@@ -56,7 +56,7 @@ export function BuyAdviceCard({ advice, currency }: Props) {
       <div className="advice-main">
         <div className="advice-badge-row">
           <span className="advice-badge">
-            <span className="dot pulse" /> {theme.badge}
+            <span className="dot pulse" aria-hidden="true" /> {theme.badge}
           </span>
           <span className="advice-score-tag">
             Deal Score: <strong>{score}</strong>/100
@@ -109,7 +109,7 @@ export function BuyAdviceCard({ advice, currency }: Props) {
       <div className="advice-meter-col">
         <div className="advice-gauge">
           <div className="gauge-circle">
-            <svg viewBox="0 0 36 36" className="gauge-svg">
+            <svg viewBox="0 0 36 36" className="gauge-svg" aria-hidden="true">
               <path
                 className="gauge-bg"
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
