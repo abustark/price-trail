@@ -1,28 +1,28 @@
 :root {
   color-scheme: light;
-  --bg: #f4f7f5;
-  --bg-alt: #eef4f1;
-  --surface: rgba(255, 255, 255, 0.9);
-  --surface-solid: #ffffff;
-  --surface-muted: #f7faf8;
-  --ink: #112421;
-  --text: #112421;
-  --muted: #526661;
-  --line: #dfe8e4;
-  --line-strong: #cbdad5;
-  --accent: #087f73;
-  --accent-strong: #05665d;
-  --accent-soft: #d9f2eb;
-  --accent-wash: #edf9f5;
-  --warm: #f2a51a;
-  --rose: #e87557;
-  --violet: #7664db;
-  --success: #208658;
-  --danger: #c5483a;
-  --dark-card: #123b37;
-  --dark-card-soft: #1a554b;
-  --shadow: 0 20px 55px rgba(27, 58, 51, 0.12);
-  --shadow-soft: 0 8px 24px rgba(27, 58, 51, 0.07);
+  --bg: #f7f4ec;
+  --bg-alt: #f1ecdf;
+  --surface: rgba(255, 253, 247, 0.92);
+  --surface-solid: #fffdf7;
+  --surface-muted: #f4f0e4;
+  --ink: #16130d;
+  --text: #16130d;
+  --muted: #5d574a;
+  --line: #e6dfcf;
+  --line-strong: #cfc5ae;
+  --accent: #0b6b5f;
+  --accent-strong: #07544a;
+  --accent-soft: #dcf0ea;
+  --accent-wash: #ecf6f2;
+  --warm: #e8951c;
+  --rose: #cf5138;
+  --violet: #6f5fd0;
+  --success: #1b7a4e;
+  --danger: #bd4032;
+  --dark-card: #101f1c;
+  --dark-card-soft: #1a3833;
+  --shadow: 0 20px 55px rgba(63, 52, 30, 0.14);
+  --shadow-soft: 0 8px 24px rgba(63, 52, 30, 0.08);
   --display: var(--font-fraunces, "Fraunces", Georgia, "Times New Roman", serif);
   --playfair: var(--font-playfair, "Playfair Display", Georgia, serif);
   --sans: var(--font-geist, "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
@@ -65,8 +65,8 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at 8% 0%, rgba(65, 184, 157, 0.12), transparent 26rem),
-    radial-gradient(circle at 96% 17%, rgba(118, 100, 219, 0.08), transparent 25rem),
+    radial-gradient(circle at 8% 0%, rgba(232, 149, 28, 0.1), transparent 26rem),
+    radial-gradient(circle at 96% 17%, rgba(11, 107, 95, 0.09), transparent 25rem),
     linear-gradient(145deg, var(--bg), var(--bg-alt));
   color: var(--text);
   font-family: var(--sans);
@@ -194,7 +194,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .hero-copy { animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both; }
 .hero-tape { animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.24s both; }
 .hero-visual { animation: rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both; }
-.hero-tracker-card { position: relative; overflow: hidden; padding: 27px; border: 1px solid color-mix(in srgb, #8ae9d5 24%, transparent); border-radius: 25px; color: #effcf8; background: var(--dark-card); box-shadow: inset 0 1px 0 rgba(217, 255, 247, 0.08), 0 24px 50px rgba(16, 61, 54, 0.24); }
+.hero-tracker-card { position: relative; overflow: hidden; padding: 27px; border: 1px solid rgba(138, 233, 213, 0.22); border-radius: 25px; color: #effcf8; background: radial-gradient(130% 100% at 88% -12%, rgba(74, 208, 189, 0.2), transparent 52%), linear-gradient(165deg, rgba(16, 36, 32, 0.86), rgba(7, 17, 15, 0.92)); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: inset 0 1px 0 rgba(217, 255, 247, 0.1), inset 0 -24px 46px rgba(0, 0, 0, 0.22), 0 26px 54px rgba(10, 28, 24, 0.3); }
 .hero-tracker-card::before { content: ""; position: absolute; width: 210px; height: 210px; top: -112px; right: -48px; border: 1px solid rgba(136,240,216,0.16); border-radius: 50%; box-shadow: 0 0 0 22px rgba(136,240,216,0.035), 0 0 0 45px rgba(136,240,216,0.025); }
 .hero-tracker-card::after { content: ""; position: absolute; width: 7px; height: 7px; right: 37px; top: 37px; border-radius: 50%; background: #7ce8d0; box-shadow: 0 0 0 6px rgba(124,232,208,0.1); }
 .tracker-card-heading { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
@@ -225,8 +225,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .button.secondary:hover { border-color: var(--line-strong); background: var(--surface-solid); color: var(--accent-strong); }
 .button.danger { border: 1px solid rgba(197, 72, 58, 0.22); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); color: var(--danger); }
 .button.danger:hover { background: var(--danger); color: #fff; }
-.search-button { min-height: 57px; color: #10302b; background: #9aefdd; }
-.search-button:hover { color: #10302b; background: #b4f6e8; }
+.search-button { min-height: 57px; color: #14211d; background: #fdfbf4; }
+.search-button:hover { color: #0d1a17; background: #ffffff; }
 .search-button:not(:disabled):active { transform: translateY(1px) scale(0.985); }
 .demo-chips { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 13px; }
 .demo-label { font-size: 11px; font-weight: 750; color: #a9d8ce; }
@@ -241,7 +241,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .form-note { display: flex; align-items: center; gap: 6px; margin-top: 11px; color: var(--muted); font-size: 11px; }
 .hero-tracker-card .form-note { color: #b2ede1; font-weight: 550; }
 .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.35); border-top-color: currentColor; border-radius: 50%; animation: spin 0.8s linear infinite; }
-.search-button .spinner { color: #10302b; border-color: rgba(16,48,43,0.25); border-top-color: #10302b; }
+.search-button .spinner { color: #14211d; border-color: rgba(20,33,29,0.25); border-top-color: #14211d; }
 .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 1.1s ease-in-out infinite; }
 .status-slot { min-height: 0; }
 .status-slot.has-message { min-height: 48px; }
@@ -626,7 +626,8 @@ p.legal-updated { color: var(--muted); font-family: var(--mono); font-size: 11px
   .hero h1 { max-width: 18ch; margin: 16px 0 15px; font-size: clamp(35px, 10.5vw, 48px); line-height: 1.02; letter-spacing: -0.045em; }
   .hero-copy { margin-bottom: 18px; font-size: 14px; line-height: 1.55; }
   .hero-tracker-card { padding: 18px 13px 15px; border-radius: 18px; }
-  .hero-tracker-card::before, .hero-tracker-card::after { display: none; }
+  .hero-tracker-card::before { transform: scale(0.58); transform-origin: top right; }
+  .hero-tracker-card::after { top: 20px; right: 20px; }
   .tracker-card-heading { margin-bottom: 15px; }
   .tracker-card-heading h2 { font-size: 19px; }
   .tracker-card-description { font-size: 11px; }
