@@ -15,7 +15,7 @@ export function SiteFooter() {
       <nav className="footer-cols" aria-label="Footer">
         <div className="footer-col">
           <strong>Product</strong>
-          <Link href="/#how">How it works</Link>
+          <Link href="/how-it-works">How it works</Link>
           <Link href="/#watchlist">Watchlist</Link>
           <Link href="/#main-content">Track a product</Link>
         </div>
