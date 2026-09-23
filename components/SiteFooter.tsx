@@ -34,8 +34,20 @@ export function SiteFooter() {
       </nav>
 
       <div className="footer-base">
-        <p>© 2026 PriceTrail</p>
-        <p>Price data is informational. Always confirm the final price at checkout.</p>
+        <div className="footer-base-copy">
+          <p>© 2026 PriceTrail</p>
+          <p>Price data is informational. Always confirm the final price at checkout.</p>
+        </div>
+        <a
+          className="footer-portfolio"
+          href="https://abufolio.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open my portfolio at abufolio.vercel.app"
+        >
+          <span className="footer-portfolio-kicker">Like this build? There&apos;s more of my work</span>
+          <span className="footer-portfolio-link">Open my portfolio <span aria-hidden="true">↗</span></span>
+        </a>
       </div>
     </footer>
   );
