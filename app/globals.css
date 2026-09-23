@@ -120,6 +120,11 @@ button { -webkit-tap-highlight-color: transparent; }
 .main-nav { display: flex; align-items: center; gap: 27px; margin-right: auto; color: var(--muted); font-size: 13px; font-weight: 650; }
 .main-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; transition: color 0.18s ease; }
 .main-nav a:hover { color: var(--accent-strong); }
+/* Sub-page back control (iPhone-style, top-left) */
+.back-button { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin: 0 0 8px -10px; padding: 0 13px 0 8px; border: 0; border-radius: 999px; background: transparent; color: var(--accent-strong); font-family: inherit; font-size: 14px; font-weight: 750; letter-spacing: -0.01em; cursor: pointer; transition: background 0.18s ease, transform 0.18s ease; }
+.back-button:hover { background: var(--accent-soft); }
+.back-button:active { transform: translateX(-1px); }
+.back-button svg { flex-shrink: 0; }
 .top-actions, .action-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .support-line { color: var(--muted); font-size: 13px; font-weight: 700; }
 

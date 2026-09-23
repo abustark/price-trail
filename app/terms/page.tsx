@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { LogoMark } from "@/components/Icons";
 import { SiteFooter } from "@/components/SiteFooter";
+import { BackButton } from "@/components/BackButton";
 
 export const metadata: Metadata = {
   title: "Terms - PriceTrail",
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <main className="shell" id="main-content">
+      <BackButton />
       <header className="topbar">
         <Link className="brand" href="/" aria-label="PriceTrail home">
           <LogoMark />
