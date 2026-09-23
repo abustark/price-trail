@@ -24,7 +24,7 @@ export default async function Home() {
           <span>PriceTrail</span>
         </Link>
         <nav className="main-nav" aria-label="Main navigation">
-          <a href="#how">How it works</a>
+          <Link href="/how-it-works">How it works</Link>
           <a href="#watchlist">Watchlist</a>
         </nav>
         <div className="top-actions">
@@ -93,48 +93,12 @@ export default async function Home() {
               <div>
                 <p className="eyebrow">Add a product</p>
                 <h2>Paste a product link</h2>
+                <p className="tracker-card-description">Start with any public product page.</p>
               </div>
             </div>
             <TrackForm signedIn={signedIn} />
             <div className="tracker-card-foot"><Icon name="globe" size={15} /> Amazon · Flipkart · AJIO · more</div>
           </div>
-        </div>
-      </section>
-
-      <section className="how-section" id="how">
-        <div className="section-heading section-heading-wide" data-reveal>
-          <div>
-            <div className="section-label"><span className="section-label-line" /> How it works</div>
-            <h2>Three steps to a better buy.</h2>
-          </div>
-        </div>
-        <ol className="steps">
-          <li className="step" data-reveal>
-            <span className="step-num" aria-hidden="true">01</span>
-            <div className="step-icon"><Icon name="link" size={17} /></div>
-            <strong>Paste any product link</strong>
-            <p>Any public product page.</p>
-          </li>
-          <li className="step" data-reveal>
-            <span className="step-num" aria-hidden="true">02</span>
-            <div className="step-icon"><Icon name="clock" size={17} /></div>
-            <strong>We trail the price</strong>
-            <p>We snapshot it over time.</p>
-          </li>
-          <li className="step" data-reveal>
-            <span className="step-num" aria-hidden="true">03</span>
-            <div className="step-icon"><Icon name="bell" size={17} /></div>
-            <strong>Buy at the right time</strong>
-            <p>Compare the low, then buy.</p>
-          </li>
-        </ol>
-        <div className="works-with" data-reveal>
-          <span className="works-label">Works with</span>
-          <span className="works-chip"><span className="store-dot amazon" aria-hidden="true" /> Amazon</span>
-          <span className="works-chip"><span className="store-dot flipkart" aria-hidden="true" /> Flipkart</span>
-          <span className="works-chip"><span className="store-dot myntra" aria-hidden="true" /> Myntra</span>
-          <span className="works-chip"><span className="store-dot ajio" aria-hidden="true" /> AJIO</span>
-          <span className="works-chip"><Icon name="globe" size={13} /> + the wider web</span>
         </div>
       </section>
 
@@ -147,33 +111,6 @@ export default async function Home() {
           <span className="list-count">{products.length} {products.length === 1 ? "item" : "items"}</span>
         </div>
         <ProductList products={products.map((product) => serializeProduct(product))} signedIn={signedIn} />
-      </section>
-
-      <section className="cap-section">
-        <div className="section-heading section-heading-wide" data-reveal>
-          <div>
-            <div className="section-label"><span className="section-label-line" /> What you get</div>
-            <h2>Every product, measured.</h2>
-          </div>
-        </div>
-        <div className="grid cap-stats">
-          <div className="stat" data-reveal>
-            <span>Price insights</span>
-            <strong>6</strong>
-          </div>
-          <div className="stat" data-reveal>
-            <span>Snapshots retained</span>
-            <strong>1,000</strong>
-          </div>
-          <div className="stat" data-reveal>
-            <span>Dedicated adapters</span>
-            <strong>4</strong>
-          </div>
-          <div className="stat" data-reveal>
-            <span>URL to get started</span>
-            <strong>1</strong>
-          </div>
-        </div>
       </section>
 
       <SiteFooter />
