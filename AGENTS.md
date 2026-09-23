@@ -13,6 +13,13 @@ These rules are mandatory for any AI agent working in this repository.
 4. **Save images to the project folder.** Any screenshot, crop, capture, or other image produced while working on this project must also be saved to `D:\projects\price-trail\artifacts\` (in addition to the working temp folder on C:). Keep file names descriptive (e.g. `final-light-desktop.png`).
 5. **Commit and push every big change.** Significant work (features, redesigns, multi-file edits, rule updates) must be committed and pushed to `origin/main` as part of finishing it — and fast-forwarded onto `arena/01a030cf-price-trail` so both branches stay identical — without waiting for an explicit request. Only trivial typo-level tweaks may be batched into the next commit.
 
+## Pending User Actions (remind until done)
+
+- **Google Cloud Console — OAuth redirect URIs (required for the fast popup sign-in):** the OAuth client used by `GOOGLE_CLIENT_ID` must have these added under **Authorized redirect URIs**, otherwise the popup fails with `redirect_uri_mismatch`:
+  - `https://price-trail-ruddy.vercel.app/auth/google/callback`
+  - `http://localhost:3010/auth/google/callback`
+  (Keep the existing `/api/auth/callback/google` entries.) Remind the user until they confirm this is done.
+
 ## Order of Operations
 
 1. Read the user's request.

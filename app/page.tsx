@@ -93,7 +93,6 @@ export default async function Home() {
               <div>
                 <p className="eyebrow">Add a product</p>
                 <h2>Paste a product link</h2>
-                <p className="tracker-card-description">Start with any public product page.</p>
               </div>
             </div>
             <TrackForm signedIn={signedIn} />
@@ -114,19 +113,19 @@ export default async function Home() {
             <span className="step-num" aria-hidden="true">01</span>
             <div className="step-icon"><Icon name="link" size={17} /></div>
             <strong>Paste any product link</strong>
-            <p>A URL from Amazon, Flipkart, Myntra, AJIO — or any store page with product data.</p>
+            <p>Any public product page.</p>
           </li>
           <li className="step" data-reveal>
             <span className="step-num" aria-hidden="true">02</span>
             <div className="step-icon"><Icon name="clock" size={17} /></div>
             <strong>We trail the price</strong>
-            <p>PriceTrail snapshots the price over time and keeps the full history on a chart.</p>
+            <p>We snapshot it over time.</p>
           </li>
           <li className="step" data-reveal>
             <span className="step-num" aria-hidden="true">03</span>
             <div className="step-icon"><Icon name="bell" size={17} /></div>
             <strong>Buy at the right time</strong>
-            <p>Compare the high, low and typical price — then set a target and keep watching.</p>
+            <p>Compare the low, then buy.</p>
           </li>
         </ol>
         <div className="works-with" data-reveal>
@@ -161,22 +160,18 @@ export default async function Home() {
           <div className="stat" data-reveal>
             <span>Price insights</span>
             <strong>6</strong>
-            <small>high · low · typical · current · changes · cadence</small>
           </div>
           <div className="stat" data-reveal>
             <span>Snapshots retained</span>
             <strong>1,000</strong>
-            <small>full history on every chart</small>
           </div>
           <div className="stat" data-reveal>
             <span>Dedicated adapters</span>
             <strong>4</strong>
-            <small>Amazon · Flipkart · Myntra · AJIO</small>
           </div>
           <div className="stat" data-reveal>
             <span>URL to get started</span>
             <strong>1</strong>
-            <small>paste, scan, track</small>
           </div>
         </div>
       </section>
