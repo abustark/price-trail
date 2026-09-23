@@ -7,6 +7,7 @@ import { ProductList } from "@/components/ProductList";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AuthButton } from "@/components/AuthButton";
+import { RecentDrops } from "@/components/RecentDrops";
 import { Icon, LogoMark } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
@@ -44,16 +45,7 @@ export default async function Home() {
           <div className="hero-kicker"><span className="kicker-dot" aria-hidden="true" /> Price history for online shopping</div>
           <h1>Track prices <em>before you buy.</em></h1>
           <p className="hero-copy">Paste a product link to see its price history.</p>
-          {/* "Recent drops" — real listed prices checked via web search, Sep 2026:
-              iPhone 16 ₹64,900 = Amazon lowest, 19% off ~₹79,990 (HT Tech, Sep 2026)
-              WH-1000XM5 ₹29,990 at Amazon vs ₹34,990 MRP (Sony India; pricehistory.app 24 Aug 2026)
-              Pegasus 40 ₹8,327 vs ₹11,895 MRP (Myntra listing, updated 12 Aug 2026) */}
-          <div className="hero-tape" aria-hidden="true">
-            <span className="tape-label">Recent drops</span>
-            <span className="tape-chip"><span className="store-dot amazon" /> iPhone 16 <strong>₹64,900</strong> <span className="tape-drop">▼ 19%</span></span>
-            <span className="tape-chip"><span className="store-dot amazon" /> WH-1000XM5 <strong>₹29,990</strong> <span className="tape-drop">▼ ₹5,000</span></span>
-            <span className="tape-chip"><span className="store-dot myntra" /> Pegasus 40 <strong>₹8,327</strong> <span className="tape-drop">▼ 30%</span></span>
-          </div>
+          <RecentDrops />
         </div>
 
         <div className="hero-visual">
