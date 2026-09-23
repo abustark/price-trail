@@ -21,10 +21,10 @@ export function SiteFooter() {
         </div>
         <div className="footer-col">
           <strong>Stores</strong>
-          <span>Amazon</span>
-          <span>Flipkart</span>
-          <span>Myntra</span>
-          <span>AJIO</span>
+          <a href="https://www.amazon.in/" target="_blank" rel="noopener noreferrer">Amazon</a>
+          <a href="https://www.flipkart.com/" target="_blank" rel="noopener noreferrer">Flipkart</a>
+          <a href="https://www.myntra.com/" target="_blank" rel="noopener noreferrer">Myntra</a>
+          <a href="https://www.ajio.com/" target="_blank" rel="noopener noreferrer">AJIO</a>
         </div>
         <div className="footer-col">
           <strong>Legal</strong>
