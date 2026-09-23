@@ -45,6 +45,8 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       className={`${geist.variable} ${geistMono.variable} ${fraunces.variable} ${playfair.variable}`}
     >
       <head>
+        <link rel="preconnect" href="https://accounts.google.com" crossOrigin="" />
+        <script src="https://accounts.google.com/gsi/client" async defer />
         <script
           dangerouslySetInnerHTML={{
             __html: `

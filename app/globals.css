@@ -327,6 +327,10 @@ button { -webkit-tap-highlight-color: transparent; }
 .footer-portfolio:hover .footer-portfolio-link { color: var(--accent-strong); text-decoration-color: var(--accent); }
 .footer-portfolio:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 
+/* ————— GIS sign-in (topbar) ————— */
+.gis-signin { display: inline-flex; align-items: center; min-height: 44px; }
+.gis-signin iframe { display: block; border: 0; }
+
 /* Product detail view */
 .back-link { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; margin: 0 0 13px 2px; color: var(--muted); font-size: 12px; font-weight: 750; }.back-link svg { transform: rotate(180deg); }.back-link:hover { color: var(--accent-strong); }
 .detail-kicker { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; color: var(--success); font-family: var(--mono); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; }.detail-kicker .status-dot { width: 6px; height: 6px; }
@@ -606,7 +610,7 @@ p.legal-updated { color: var(--muted); font-family: var(--mono); font-size: 11px
   .topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 11px 12px; margin-bottom: 20px; }
   .brand { min-width: 0; margin: 0; }
   .brand > span { white-space: nowrap; }
-  .top-actions { grid-column: 2; grid-row: 1; min-width: 0; margin: 0; justify-content: flex-end; gap: 6px; }
+  .top-actions { grid-column: 2; grid-row: 1; min-width: 0; margin: 0; justify-content: flex-end; gap: 5px; }
   .main-nav { display: none; }
   .theme-switch, .auth-pill, .user-chip { min-height: 44px; padding: 5px 8px; }
   .theme-switch { width: 44px; padding: 5px; border-radius: 50%; }
