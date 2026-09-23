@@ -3,16 +3,17 @@ import { OAuth2Client } from "google-auth-library";
 import { encode } from "next-auth/jwt";
 
 /**
- * Google Identity Services sign-in endpoint.
+ * Fast popup sign-in endpoint.
  *
- * Receives a GIS ID token (response.credential), verifies it once against
- * Google, then mints a NextAuth-compatible JWT session cookie directly —
- * the exact same cookie the OAuth redirect flow would have issued, so
- * `auth()`, `getViewer()` and existing sessions keep working unchanged.
- * No page redirects, no authorization-code round trip.
+ * Receives the authorization code returned to /auth/google/callback by
+ * Google's popup window, exchanges it server-to-server for tokens, verifies
+ * the ID token once, then mints a NextAuth-compatible JWT session cookie —
+ * the exact same cookie the old OAuth redirect flow issued, so `auth()`,
+ * `getViewer()` and existing sessions/watchlists keep working unchanged.
  */
 
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60; // matches Auth.js default
+const POPUP_REDIRECT_PATH = "/auth/google/callback";
 
 function resolveAuthSecret(): string {
   const secret =
@@ -46,28 +47,37 @@ function resolveSessionCookie(): { name: string; secure: boolean } {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as { idToken?: string };
-    const idToken = body?.idToken;
-    if (!idToken) return NextResponse.json({ error: "missing idToken" }, { status: 400 });
+    const body = (await req.json()) as { code?: string };
+    const code = body?.code;
+    if (!code) return NextResponse.json({ error: "missing code" }, { status: 400 });
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    if (!clientId) {
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    if (!clientId || !clientSecret) {
       return NextResponse.json({ error: "sign-in is not configured" }, { status: 503 });
     }
 
-    // One verification: signature, issuer, expiry, audience — all in this call.
-    const client = new OAuth2Client(clientId);
-    const ticket = await client.verifyIdToken({ idToken, audience: clientId });
-    const payload = ticket.getPayload();
+    // redirect_uri must byte-match the one sent in the authorization request
+    // (the client built it from window.location.origin on this same origin).
+    const redirectUri = `${new URL(req.url).origin}${POPUP_REDIRECT_PATH}`;
 
+    // Server-to-server code exchange (client_secret stays on the server).
+    const client = new OAuth2Client(clientId, clientSecret, redirectUri);
+    const { tokens } = await client.getToken(code);
+    if (!tokens.id_token) {
+      return NextResponse.json({ error: "no id_token in exchange" }, { status: 401 });
+    }
+
+    // One verification: signature, issuer, expiry, audience.
+    const ticket = await client.verifyIdToken({ idToken: tokens.id_token, audience: clientId });
+    const payload = ticket.getPayload();
     if (!payload?.sub || !payload.email) {
       return NextResponse.json({ error: "invalid token" }, { status: 401 });
     }
 
     // Same default token shape Auth.js builds on OAuth sign-in
-    // (lib/actions/callback: { name, email, picture, sub: user.id }) — and for
-    // Google, user.id === profile.sub, so identity (and existing watchlists)
-    // carry over unchanged.
+    // ({ name, email, picture, sub: user.id }) — for Google user.id ===
+    // profile.sub, so identity and existing watchlists carry over unchanged.
     const token = {
       name: payload.name ?? null,
       email: payload.email,
@@ -97,6 +107,6 @@ export async function POST(req: Request) {
       "[auth/google] sign-in rejected:",
       error instanceof Error ? error.message : error
     );
-    return NextResponse.json({ error: "invalid token" }, { status: 401 });
+    return NextResponse.json({ error: "invalid code" }, { status: 401 });
   }
 }

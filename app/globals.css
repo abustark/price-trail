@@ -327,9 +327,9 @@ button { -webkit-tap-highlight-color: transparent; }
 .footer-portfolio:hover .footer-portfolio-link { color: var(--accent-strong); text-decoration-color: var(--accent); }
 .footer-portfolio:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 
-/* ————— GIS sign-in (topbar) ————— */
-.gis-signin { display: inline-flex; align-items: center; min-height: 44px; }
-.gis-signin iframe { display: block; border: 0; }
+/* ————— Sign-in pill: popup flow loading states ————— */
+.auth-pill:disabled { cursor: progress; opacity: 0.9; }
+.auth-pill .spinner { width: 15px; height: 15px; border: 2px solid color-mix(in srgb, currentColor 25%, transparent); border-top-color: currentColor; border-radius: 50%; animation: spin 0.8s linear infinite; }
 
 /* Product detail view */
 .back-link { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; margin: 0 0 13px 2px; color: var(--muted); font-size: 12px; font-weight: 750; }.back-link svg { transform: rotate(180deg); }.back-link:hover { color: var(--accent-strong); }

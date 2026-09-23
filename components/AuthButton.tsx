@@ -1,6 +1,6 @@
 import type { Session } from "next-auth";
 import { auth, signOut } from "@/auth";
-import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { GoogleSignInPill } from "@/components/GoogleSignInPill";
 import { Icon } from "@/components/Icons";
 
 export async function AuthButton({ session }: { session?: Session | null } = {}) {
@@ -17,10 +17,11 @@ export async function AuthButton({ session }: { session?: Session | null } = {})
   }
 
   if (!currentSession?.user) {
-    // GIS credential flow — popup/One Tap, no OAuth redirect chain.
-    // The old `signIn("google")` server action (full-page redirect through
-    // Google's chooser → consent → callback) is intentionally gone.
-    return <GoogleSignInButton clientId={process.env.GOOGLE_CLIENT_ID ?? ""} />;
+    // Fast popup flow: our styled pill opens Google's account chooser in a
+    // small window; the callback page passes the code back via postMessage —
+    // the main page never navigates. (The rendered GIS iframe button was
+    // reverted: it wrecked the mobile header.)
+    return <GoogleSignInPill clientId={process.env.GOOGLE_CLIENT_ID ?? ""} />;
   }
 
   const displayName = currentSession.user.name || currentSession.user.email || "Signed in";
