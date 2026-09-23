@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           <span>PriceTrail</span>
         </Link>
         <nav className="main-nav" aria-label="Main navigation">
-          <a href="/#watchlist">Watchlist</a>
+          <Link href="/#watchlist">Watchlist</Link>
         </nav>
       </header>
 
