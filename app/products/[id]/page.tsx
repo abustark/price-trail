@@ -110,7 +110,7 @@ export default async function ProductPage({ params }: Props) {
         mrp={product.mrp}
       />
 
-      <section className="grid stats-grid" aria-label="Price statistics">
+      <section className="grid stats-grid" aria-label="Price statistics" data-reveal>
         <Stat label="Current price" value={stats.current ? formatMoney(stats.current.price, product.currency) : "None"} note={stats.current ? `as of ${formatDate(stats.current.capturedAt)}` : undefined} />
         <Stat
           label="Lowest price"
@@ -122,7 +122,7 @@ export default async function ProductPage({ params }: Props) {
         <Stat label="Price observations" value={String(stats.sampleCount)} note={`${stats.changes.count} ${stats.changes.count === 1 ? "change" : "changes"} observed`} />
       </section>
 
-      <section className="detail-grid">
+      <section className="detail-grid" data-reveal>
         <div className="panel">
           <h2>Price history</h2>
           <PriceChart

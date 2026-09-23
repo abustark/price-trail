@@ -239,6 +239,7 @@ export function PriceChart({
             strokeWidth="3"
             strokeLinejoin="round"
             strokeLinecap="round"
+            filter="url(#glow)"
           />
 
           {/* Active Crosshair Guideline */}

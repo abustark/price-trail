@@ -24,6 +24,7 @@ export default async function Home() {
           <span>PriceTrail</span>
         </Link>
         <nav className="main-nav" aria-label="Main navigation">
+          <a href="#how">How it works</a>
           <a href="#watchlist">Watchlist</a>
         </nav>
         <div className="top-actions">
@@ -101,8 +102,45 @@ export default async function Home() {
         </div>
       </section>
 
+      <section className="how-section" id="how">
+        <div className="section-heading section-heading-wide" data-reveal>
+          <div>
+            <div className="section-label"><span className="section-label-line" /> How it works</div>
+            <h2>Three steps to a better buy.</h2>
+          </div>
+        </div>
+        <ol className="steps">
+          <li className="step" data-reveal>
+            <span className="step-num" aria-hidden="true">01</span>
+            <div className="step-icon"><Icon name="link" size={17} /></div>
+            <strong>Paste any product link</strong>
+            <p>A URL from Amazon, Flipkart, Myntra, AJIO — or any store page with product data.</p>
+          </li>
+          <li className="step" data-reveal>
+            <span className="step-num" aria-hidden="true">02</span>
+            <div className="step-icon"><Icon name="clock" size={17} /></div>
+            <strong>We trail the price</strong>
+            <p>PriceTrail snapshots the price over time and keeps the full history on a chart.</p>
+          </li>
+          <li className="step" data-reveal>
+            <span className="step-num" aria-hidden="true">03</span>
+            <div className="step-icon"><Icon name="bell" size={17} /></div>
+            <strong>Buy at the right time</strong>
+            <p>Compare the high, low and typical price — then set a target and keep watching.</p>
+          </li>
+        </ol>
+        <div className="works-with" data-reveal>
+          <span className="works-label">Works with</span>
+          <span className="works-chip"><span className="store-dot amazon" aria-hidden="true" /> Amazon</span>
+          <span className="works-chip"><span className="store-dot flipkart" aria-hidden="true" /> Flipkart</span>
+          <span className="works-chip"><span className="store-dot myntra" aria-hidden="true" /> Myntra</span>
+          <span className="works-chip"><span className="store-dot ajio" aria-hidden="true" /> AJIO</span>
+          <span className="works-chip"><Icon name="globe" size={13} /> + the wider web</span>
+        </div>
+      </section>
+
       <section className="watchlist-section" id="watchlist">
-        <div className="section-heading section-heading-wide">
+        <div className="section-heading section-heading-wide" data-reveal>
           <div>
             <div className="section-label"><span className="section-label-line" /> Watchlist</div>
             <h2>Products you&apos;re tracking.</h2>
@@ -110,6 +148,37 @@ export default async function Home() {
           <span className="list-count">{products.length} {products.length === 1 ? "item" : "items"}</span>
         </div>
         <ProductList products={products.map((product) => serializeProduct(product))} signedIn={signedIn} />
+      </section>
+
+      <section className="cap-section">
+        <div className="section-heading section-heading-wide" data-reveal>
+          <div>
+            <div className="section-label"><span className="section-label-line" /> What you get</div>
+            <h2>Every product, measured.</h2>
+          </div>
+        </div>
+        <div className="grid cap-stats">
+          <div className="stat" data-reveal>
+            <span>Price insights</span>
+            <strong>6</strong>
+            <small>high · low · typical · current · changes · cadence</small>
+          </div>
+          <div className="stat" data-reveal>
+            <span>Snapshots retained</span>
+            <strong>1,000</strong>
+            <small>full history on every chart</small>
+          </div>
+          <div className="stat" data-reveal>
+            <span>Dedicated adapters</span>
+            <strong>4</strong>
+            <small>Amazon · Flipkart · Myntra · AJIO</small>
+          </div>
+          <div className="stat" data-reveal>
+            <span>URL to get started</span>
+            <strong>1</strong>
+            <small>paste, scan, track</small>
+          </div>
+        </div>
       </section>
 
       <SiteFooter />

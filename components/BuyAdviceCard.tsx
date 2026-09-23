@@ -52,7 +52,7 @@ export function BuyAdviceCard({ advice, currency }: Props) {
   const theme = getVerdictTheme();
 
   return (
-    <div className={`advice-card ${theme.colorClass}`} role="region" aria-label="Buying advice">
+    <div className={`advice-card ${theme.colorClass}`} role="region" aria-label="Buying advice" data-reveal>
       <div className="advice-main">
         <div className="advice-badge-row">
           <span className="advice-badge">
