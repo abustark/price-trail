@@ -133,4 +133,4 @@ price tracker, ecommerce analytics, Next.js 15, App Router, React 19, TypeScript
 
 **Portfolio card (title + ~30 words + stack):** PriceTrail — paste any product link to track its price over time, see highs/lows/trends with a buy verdict, set target alerts, and let daily scans keep history fresh. Guest mode included. `Next.js · React · MongoDB · Auth.js · Vercel`
 
-**Tone/length guide for the AI:** resume = 3–5 dense bullets or one 3-line paragraph, lead with verbs and numbers, keywords from §8; portfolio = friendly paragraph + feature list + stack chips, mention the 4-store adapters, the guest-claim flow, and the hand-rolled chart; never claim email alerts, PWA installability, or a unit test suite — none exist.
+**Tone/length guide for the AI:** Frame impact as user capability + the hardest engineering problem solved (no business KPIs). Resume = 3–5 dense bullets or one 3-line paragraph, lead with verbs and numbers, keywords from §8; portfolio = friendly paragraph + feature list + stack chips, mention the 4-store adapters, the guest-claim flow, and the hand-rolled chart; never claim email alerts, PWA installability, or a unit test suite — none exist.
