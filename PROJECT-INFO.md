@@ -18,7 +18,7 @@
 | Live site | https://price-trail-ruddy.vercel.app |
 | Source | https://github.com/abustark/price-trail |
 | License | None declared (private) |
-| Status | Production-deployed on Vercel, actively maintained (2026, 58 commits) |
+| Status | Production-deployed on Vercel, actively maintained (2026, 60 commits) |
 
 **One-liners (pick by context):**
 - *10 words:* Ecommerce price tracker with Google sign-in, history charts, cron rescans.
@@ -41,12 +41,12 @@
 | Validation | zod | ^3.24.3 | `POST /api/products {url}` schema |
 | Hosting | Vercel Functions | `app/api/*` routes | Production deployment |
 | Cron | Vercel Cron | `0 0 * * *` daily UTC → `GET /api/cron/scan` | Scheduled rescans |
-| Styling | Custom CSS | `app/globals.css` 663 lines, no framework | Light/dark themes, paper `#f7f4ec` / dark `#0c1414` |
+| Styling | Custom CSS | `app/globals.css` 707 lines, no framework | Light/dark themes, paper `#f7f4ec` / dark `#0c1414` |
 | Fonts | Geist, Geist_Mono, Fraunces, Playfair_Display | via Next fonts | Body / mono / display |
-| Charts | Hand-rolled SVG | `PriceChart.tsx` 377 lines, no chart lib | 720×300 interactive chart |
+| Charts | Hand-rolled SVG | `PriceChart.tsx` 414 lines, no chart lib | 720×300 interactive chart |
 | SEO | metadataBase, OG ImageResponse, `icon.svg` | — | Discoverability |
 | Lint | ESLint | ^9.25.0 + `eslint-config-next` | `npm run lint` |
-| VCS | Git / GitHub | main branch | 58 commits, trunk-based |
+| VCS | Git / GitHub | main branch | 60 commits, trunk-based |
 
 ---
 
@@ -55,7 +55,7 @@
 - **App Router + Auth.js + raw Mongo driver:** server components (`page.tsx`, `products/[id]/page.tsx`, `ProductList`, `BuyAdviceCard`) read Mongo directly via `lib/db.ts` (global client caching, 5 indexes); client components (`TrackForm`, `PriceChart`, `TargetPriceAlert`, `RescanButton`, `GoogleSignInPill`) call 7 API paths.
 - **Two auth paths, one session cookie:** standard `[...nextauth]` handler plus a fast popup flow — `GoogleSignInPill` opens Google OAuth (520×620), `/auth/google/callback` posts the code to `POST /api/auth/google`, which exchanges + verifies and sets the same `authjs.session-token` JWT cookie, then reloads.
 - **Guest-first with claim:** signed-out visitors get an httpOnly `pricetrail-guest-id` UUID cookie (180d) via `getOrCreateViewer`; lists are guest-scoped with a sync banner. On sign-in `claimGuestProducts` moves guest products to the Google `userId`, merging duplicates by `normalizedUrl` and re-pointing samples; home shows `Saved N products…` notice.
-- **Scanner isolated:** `lib/scanner.ts` (538 lines) does direct fetch (Chrome/125 UA, 18s timeout, 3 attempts) then optional `SCRAPER_PROXY_*` render fallback; parse order JSON-LD → OG price meta → store-specific regex (Flipkart/Amazon/Myntra/AJIO selectors) → generic `data-price/data-testid/commerce JSON`; MRP variants, currency normalisation (`₹→INR`), stock detection, blocked-page (<50KB + captcha/robot) and SSRF guards. Replaceable without touching UI/analytics.
+- **Scanner isolated:** `lib/scanner.ts` (621 lines) does direct fetch (Chrome/125 UA, 18s timeout, 3 attempts) then optional `SCRAPER_PROXY_*` render fallback; parse order JSON-LD → OG price meta → store-specific regex (Flipkart/Amazon/Myntra/AJIO selectors) → generic `data-price/data-testid/commerce JSON`; MRP variants, currency normalisation (`₹→INR`), stock detection, blocked-page (<50KB + captcha/robot) and SSRF guards. Replaceable without touching UI/analytics.
 - **Cron scans due products:** `GET /api/cron/scan` (requires `CRON_SECRET` via query/header/Bearer) scans ≤20 due (`active && nextScanAt<=now`, `scanEveryHours` default 6) via `scanDueProducts`, updating `nextScanAt` and `lastError` on failure.
 - **Instant-chart backfill:** first scan queues a FIFO backfill (1.5s) inserting a 6-point `mrp-baseline/historical` synthesis (90/65/45/30/14/3d) so charts render before real history accumulates.
 
@@ -91,13 +91,13 @@
 
 ## 6. Scale metrics (quantifiables)
 
-- **76** git-tracked files; **4,799 lines** across TS/TSX/CSS (largest `globals.css` 663, `scanner.ts` 538, `PriceChart.tsx` 377).
+- **77** git-tracked files; **~5,353 lines** across TS/TSX/CSS (largest `globals.css` 707, `scanner.ts` 621, `PriceChart.tsx` 414).
 - **7 API paths / 8 route files / 10 method handlers** (GET×4, POST×3, PATCH×1, DELETE×2).
 - **15 components** (server + client split), **9 lib modules**, **7 pages** (`/`, `/products/[id]`, `/how-it-works`, `/privacy`, `/terms`, `/auth/google/callback` + loading/not-found/OG-image).
 - **2 collections, 5 indexes** (`{userId,normalizedUrl}` unique, `{active,nextScanAt}`, `{userId,updatedAt}`, `price_samples {productId,capturedAt}` + `{productId,price}`).
 - **4 dedicated stores + 1 generic**; **14-URL** recent-drops pool; **3 demo chips** (iPhone 16, WH-1000XM5, Pegasus).
 - **6 price samples** synthesised per new product for instant charts; up to **1,000 samples** loaded per detail page, last **12** shown.
-- **58 commits** on `main`.
+- **60 commits** on `main`.
 
 ---
 
