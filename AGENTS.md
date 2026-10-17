@@ -13,6 +13,13 @@ These rules are mandatory for any AI agent working in this repository.
 4. **Save images to the project folder.** Any screenshot, crop, capture, or other image produced while working on this project must also be saved to `D:\projects\price-trail\artifacts\` (in addition to the working temp folder on C:). Keep file names descriptive (e.g. `final-light-desktop.png`).
 5. **Commit and push every big change.** Significant work (features, redesigns, multi-file edits, rule updates) must be committed and pushed to `origin/main` as part of finishing it — and fast-forwarded onto `arena/01a030cf-price-trail` so both branches stay identical — without waiting for an explicit request. Only trivial typo-level tweaks may be batched into the next commit.
 
+## Commit Naming & Versioning (strict)
+
+1. Every commit follows this versioning structure: `2.0.1`, `2.0.2`, ..., `2.0.9`, `2.0.10` ➔ rolls over to `2.1.0`; then `2.1.1`, ..., `2.1.10` ➔ rolls over to `2.2.0`, etc. The third number NEVER exceeds `.10`.
+2. Format: `<version> - <short description>` (e.g., `2.0.1 - fix hero spacing`). Keep it short and clear.
+3. **One version number per agent response / request batch** — not per issue, not per commit. A single owner request (even if it fixes many issues) consumes exactly ONE version number. Multiple commits inside one response are NOT allowed to each take a new number; if a follow-up fix is needed in the same batch, fold it into the same version's commit(s) — never burn a second number. Only a genuinely new owner request (a new response turn) advances the number.
+4. Git history before this rule is unversioned; numbering starts at `2.0.0`. Every commit must also be logged in `COMMIT-HISTORY.md` (repo root) with its version and what it did, and the `📌 Next version` line at its top kept current.
+
 ## Order of Operations
 
 1. Read the user's request.
